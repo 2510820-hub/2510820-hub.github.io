@@ -1,254 +1,361 @@
-<!doctype html>
+from pathlib import Path
+import zipfile
+
+root = Path("/mnt/data/entropylab-clean")
+root.mkdir(parents=True, exist_ok=True)
+index_path = root / "index.html"
+
+with open(index_path, "w", encoding="utf-8") as f:
+    f.write("""<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EntropyLab · 엔트로피 시뮬레이션</title>
-  <meta name="description" content="빨간/파란 입자 혼합과 열 이동으로 엔트로피 변화를 직관적으로 시각화하는 웹 시뮬레이터 템플릿.">
-  <meta name="theme-color" content="#0f172a">
-  <!-- Open Graph -->
-  <meta property="og:title" content="EntropyLab · 엔트로피 시뮬레이션">
-  <meta property="og:description" content="빨간/파란 입자 혼합과 열 이동으로 엔트로피 변화를 시각화.">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EntropyLab — 엔트로피 배우기</title>
   <style>
-    :root{
-      --bg: #0b1020; /* slate-950 */
-      --panel: #0f172a; /* slate-900 */
-      --muted: #94a3b8; /* slate-400 */
-      --text: #e2e8f0; /* slate-200 */
-      --accent: #22d3ee; /* cyan-400 */
-      --accent-2: #a78bfa; /* violet-400 */
-      --danger: #fb7185; /* rose-400 */
-      --ok: #4ade80;    /* green-400 */
-      --grid: #1f2937;  /* slate-800 */
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; background:linear-gradient(180deg, #0a0f1e, #0e1530); color:var(--text);
-      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-    header{
-      position:sticky; top:0; z-index:20; background:rgba(11,16,32,.75); backdrop-filter:saturate(160%) blur(10px);
-      border-bottom:1px solid #1f2937;
-    }
-    .wrap{max-width:1100px; margin:0 auto; padding:16px}
-    .brand{display:flex; align-items:center; gap:12px; font-weight:700}
-    .logo{width:28px; aspect-ratio:1; border-radius:8px; background:conic-gradient(from 0deg, #ef4444, #3b82f6, #22d3ee, #a78bfa, #ef4444); box-shadow:0 0 16px #22d3ee55 inset}
-    nav{display:flex; gap:14px; margin-left:auto}
-    nav a{color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:8px}
-    nav a:hover{background:#111827; color:var(--text)}
-
-    main{padding:24px 16px}
-    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:18px}
-    @media (max-width: 960px){ .grid{grid-template-columns:1fr} }
-
-    .card{background:linear-gradient(180deg, #0b1120, #0a1226); border:1px solid #111827; border-radius:16px; box-shadow:0 10px 30px 0 rgba(0,0,0,.35)}
-    .card h2{font-size:18px; margin:0 0 8px}
-    .card .inner{padding:16px}
-
-    .sim-wrap{padding:12px}
-    .canvas-frame{position:relative; background:#020617; border:1px solid #111827; border-radius:14px; overflow:hidden}
-    canvas{display:block; width:100%; height:auto; background:repeating-linear-gradient( to bottom, #0b1226, #0b1226 12px, #0a132b 12px, #0a132b 24px)}
-    .statusbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 12px; background:#0b1226; border-top:1px solid #111827}
-    .pill{padding:6px 10px; border:1px solid #1f2937; border-radius:999px; background:#0b1326; color:var(--muted)}
-
-    .controls{display:grid; gap:12px}
-    .control{display:grid; gap:6px}
-    .control label{font-weight:600; color:#cbd5e1}
-    .control .row{display:flex; align-items:center; gap:10px}
-    input[type=range]{width:100%}
-    .kbd{font:12px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco; color:#cbd5e1; background:#0b1226; border:1px solid #1f2937; padding:2px 6px; border-radius:6px}
-
-    .btns{display:flex; flex-wrap:wrap; gap:10px}
-    button{
-      cursor:pointer; border:1px solid #1f2937; background:#0b1226; color:var(--text); padding:10px 12px; border-radius:12px; font-weight:600
-    }
-    button.primary{background:linear-gradient(180deg, #0f172a, #0b1226); border-color:#233045; box-shadow:0 8px 20px rgba(34,211,238,.12)}
-    button:hover{filter:brightness(1.1)}
-    button:disabled{opacity:.5; cursor:not-allowed}
-
-    footer{padding:24px 16px; color:var(--muted)}
-    .muted{color:var(--muted)}
-    .tiny{font-size:12px}
-    .row{display:flex; gap:8px; align-items:center}
-    .grow{flex:1}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
-    .success{color:var(--ok)}
-    .danger{color:var(--danger)}
-  .page{display:none}
-.page.active{display:block}
-.pagebar{position:sticky; bottom:12px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(11,16,32,.75); border:1px solid #111827; border-radius:12px; padding:8px 12px; backdrop-filter:saturate(160%) blur(10px)}
-.pagebar button{border-radius:10px}
-.dots{display:flex; gap:8px}
-.dot{width:8px; height:8px; border-radius:50%; background:#1f2937; display:inline-block}
-.dot.active{background:#22d3ee}
-.page{display:none; opacity:0; transform:translateY(6px); transition:opacity .25s ease, transform .25s ease}
-.page.active{display:block; opacity:1; transform:none}
-.pagebar{position:sticky; bottom:12px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(11,16,32,.75); border:1px solid #111827; border-radius:12px; padding:8px 12px; backdrop-filter:saturate(160%) blur(10px)}
-.pagebar button{border-radius:10px}
-.dots{display:flex; gap:8px}
-.dot{width:8px; height:8px; border-radius:50%; background:#1f2937; display:inline-block}
-.dot.active{background:#22d3ee}
-.pagecount{font:12px; color:var(--muted)}
-
-/* Light theme */
-:root[data-theme="light"]{
-  --bg:#f8fafc; --panel:#ffffff; --muted:#475569; --text:#0f172a; --accent:#06b6d4; --accent-2:#7c3aed; --danger:#dc2626; --ok:#16a34a; --grid:#e2e8f0;
-}
-:root[data-theme="light"] body{background:linear-gradient(180deg,#f1f5f9,#e2e8f0)}
-:root[data-theme="light"] .card{background:linear-gradient(180deg,#ffffff,#f8fafc); border-color:#e2e8f0}
-:root[data-theme="light"] .canvas-frame{background:#f8fafc; border-color:#e2e8f0}
-:root[data-theme="light"] .statusbar{background:#f1f5f9; border-color:#e2e8f0}
-</style>
+    :root { --bg:#0b1020; --panel:#0f172a; --text:#e2e8f0; --muted:#94a3b8; --accent:#22d3ee; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg,#0a0f1e,#0e1530); color:var(--text); }
+    header{ position:sticky; top:0; background:rgba(11,16,32,.7); backdrop-filter: blur(10px); border-bottom:1px solid #1f2937; z-index:10; }
+    .wrap{ max-width:1100px; margin:0 auto; padding:14px 16px; }
+    nav{ display:flex; gap:12px; }
+    nav a{ color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:8px; }
+    nav a:hover{ background:#111827; color:var(--text); }
+    main{ padding:20px 16px; }
+    .card{ background:linear-gradient(180deg,#0b1120,#0a1226); border:1px solid #111827; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); margin-bottom:16px; }
+    .inner{ padding:16px; }
+    h1,h2{ margin:0 0 8px; }
+    .muted{ color:var(--muted); }
+    .row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .kbd{ font-size:12px; border:1px solid #1f2937; background:#0b1226; padding:6px 10px; border-radius:8px; color:var(--text); }
+    button{ cursor:pointer; border:1px solid #1f2937; background:#0b1226; color:var(--text); padding:10px 12px; border-radius:12px; font-weight:600 }
+    button.primary{ background:linear-gradient(180deg,#0f172a,#0b1226); border-color:#233045; box-shadow:0 8px 20px rgba(34,211,238,.12) }
+    .page{ display:none; opacity:0; transform: translateY(6px); transition:opacity .2s ease, transform .2s ease; }
+    .page.active{ display:block; opacity:1; transform:none; }
+    .pagebar{ position:sticky; bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(11,16,32,.75); border:1px solid #111827; border-radius:12px; padding:8px 12px; }
+    .dots{ display:flex; gap:8px; }
+    .dot{ width:8px; height:8px; border-radius:50%; background:#1f2937; display:inline-block; }
+    .dot.active{ background:var(--accent); }
+    .pagecount{ font-size:12px; color:var(--muted); }
+  </style>
 </head>
 <body>
   <header>
     <div class="wrap row">
-      <div class="brand"><div class="logo" aria-hidden></div>EntropyLab</div>
+      <strong>EntropyLab</strong>
       <nav>
         <a href="#page-cover" data-goto="0">표지</a>
         <a href="#page-intro" data-goto="1">소개</a>
         <a href="#page-sim" data-goto="2">시뮬레이터</a>
-        <button id="themeToggle" class="kbd" style="margin-left:8px" title="테마 전환">🌗 테마</button>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <!-- Page 0: COVER -->
     <section class="card page" id="page-cover" aria-label="표지">
       <div class="inner">
-        <h1 style="margin:0 0 6px;font-size:28px">EntropyLab</h1>
-        <p class="muted" style="margin-top:0">엔트로피를 <strong>직관</strong>과 <strong>시뮬레이션</strong>으로 배우는 작은 실험실</p>
-        <div class="row" style="margin-top:12px; gap:12px; flex-wrap:wrap">
+        <h1>EntropyLab</h1>
+        <p class="muted">엔트로피를 쉽고 재미있게 — 표지 → 소개 → 시뮬레이터 순서로 살펴보세요.</p>
+        <div class="row">
           <button class="primary" id="startBtn">시작하기 →</button>
-          <a class="kbd" href="#page-intro" data-goto="1" role="button">개념 소개 보기</a>
+          <a class="kbd" href="#page-intro" data-goto="1" role="button">개념 소개로</a>
         </div>
-      </div>
-      <div class="inner">
-        <ul class="muted">
-          <li>두 구획, 중앙 막, 온도차(평균 속도)로 혼합 과정을 관찰</li>
-          <li>정규화된 Shannon 혼합 엔트로피로 상태를 수치화</li>
-          <li>PNG 스냅샷 저장, 반응형 UI, 접근성 라벨</li>
-        </ul>
       </div>
     </section>
 
-    <!-- Page 1: INTRO -->
     <section class="card page" id="page-intro" aria-label="엔트로피 소개">
       <div class="inner">
-        <h2>엔트로피 한눈에 보기</h2>
-        <p class="muted">같은 단어라도 맥락에 따라 의미가 조금씩 달라요. 세 가지 관점으로 간단히 정리하고, 아래에 <strong>H(p) 미니 데모</strong>도 넣었습니다.</p>
-      </div>
-      <div class="inner">
-        <h3>① 정보 엔트로피 (Information entropy)</h3>
-        <p class="muted">불확실성/평균 정보량 <span class="mono">H = - Σ p_i · log₂ p_i</span> (단위: bit). 동일확률일 때 최대.</p>
+        <h2>&lt;열역학 법칙 간단 정리&gt;</h2>
         <ul>
-          <li>예) 동전: <span class="mono">p(앞)=p(뒤)=0.5</span> → <span class="mono">H=1 bit</span></li>
-          <li>예) 치우친 동전: <span class="mono">p=0.9</span> → <span class="mono">H≈0.47 bit</span></li>
+          <li><strong>열역학 제 1법칙</strong>: 에너지의 총량은 항상 일정하며 한 형태에서 다른 형태로 변환될 뿐 생성되거나 소멸되지 않는다는 원리</li>
+          <li><strong>열역학 제 2법칙</strong>: 이는 엔트로피가 나타나는 법칙이다. 자연계의 모든 자발적 과정은 무질서도, 즉 엔트로피가 증가하는 방향으로 진행된다는 법칙입니다. 즉, 열은 항상 높은 온도에서 낮은 온도로 자발적으로 흐르며, 외부의 일이 없이는 저온에서 고온으로 흐를 수 없다.</li>
         </ul>
+        <p>ex) 얼음이 물이 될 때 물 분자가 이동하게 되는데, 이 때 분자들이 다양한 방향으로 퍼지게 되며 이로 인해서 엔트로피가 증가하게 된다. (무질서함이 증가하게 됨)</p>
+        <p>=&gt; 이러한 예시로 하나의 개념을 더 알 수 있는데, 얼음이 물이 되는 것은 고체에서 액체가 되는 것인데 이 과정에서 외부의 다른 힘 없이 액체가 다시 고체가 되는 것은 불가능하기 때문에 한 공간에서 엔트로피 값은 감소하지 않고 계속해서 증가한다는 사실을 알 수 있다.</p>
       </div>
       <div class="inner">
-        <h3>② 열역학적 엔트로피 (Thermodynamic entropy)</h3>
-        <p class="muted">가역 열교환의 적분 <span class="mono">ΔS = ∫ δQ_rev/T</span> (단위: J/K).</p>
-        <ul>
-          <li>자유팽창: 외부 일 없이 부피가 늘면 <em>미시상태 수</em>가 크게 증가 → S 증가</li>
-          <li>제2법칙: 고립계에서는 <span class="mono">ΔS ≥ 0</span></li>
-        </ul>
+        <h2>이론적 배경</h2>
+        <p>엔트로피의 개념: 물질 또는 에너지의 무질서한 상태를 나타내는데, 정확하게는 물질이나 에너지 상태가 가질 수 있는 경우의 수로서의 확률을 나타낸다.</p>
       </div>
       <div class="inner">
-        <h3>③ 통계적 엔트로피 (Statistical entropy)</h3>
-        <p class="muted"><span class="mono">S = k_B ln Ω</span>. 가능 배치 수 <span class="mono">Ω</span>의 로그. 동일확률이면 <span class="mono">H = S / (k_B ln 2)</span>.</p>
-        <ul>
-          <li>동전 N개의 앞면 k개 배치는 <span class="mono">Ω = C(N,k)</span></li>
-        </ul>
-      </div>
-      <div class="inner">
-        <h3 style="margin-bottom:8px">미니 데모: H(p) 곡선</h3>
-        <p class="muted">슬라이더로 <span class="mono">p</span>(왼쪽 점유/확률)를 조절하면 <span class="mono">H(p)=-[p log₂ p + (1-p) log₂(1-p)]</span>가 어떻게 바뀌는지 확인해 보세요.</p>
-        <div class="row" style="gap:12px; align-items:center">
-          <input id="pDemo" type="range" min="0.0" max="1.0" step="0.01" value="0.5" style="width:280px">
-          <span class="kbd">p=<span id="pDemoVal">0.50</span></span>
-          <span class="kbd">H(p)=<span id="HDemoVal">1.000</span> bit</span>
-          <button id="pDemoReset">중앙(0.5)</button>
-        </div>
-        <div class="canvas-frame" style="margin-top:10px">
-          <canvas id="entropyChart" width="900" height="220" aria-label="H(p) 차트"></canvas>
-        </div>
-      </div>
-      <div class="inner">
-        <p class="muted">우리 시뮬레이터(다음 페이지)는 공간을 좌/우로 나눠 점유비율 <span class="mono">p</span>에서 유도한 <strong>혼합 정보 엔트로피</strong>를 표시합니다.</p>
+        <h2>#엔트로피의 종류</h2>
+        <p>엔트로피의 종류에는 여러 가지가 있는데, 열역학적 엔트로피, 통계학적 엔트로피(볼츠만 엔트로피), 정보 엔트로피가 있다.</p>
+        <p>첫 번째로 열역학적 엔트로피는 물체의 열적 상태를 나타낸 물리량으로, 무질서도라고 알려져있다.</p>
+        <p>두 번째로 통계학적 엔트로피는 볼츠만 엔트로피라고 불리며 이는 열역학적 엔트로피의 근본적인 정의가 되고 계의 거시적 상태에 대응하는 미시적 상태의 수를 로그로 정의한 값인데, 이 값은 한 공간에서 열의 이동량을 절대 온도로 나눈 값과 같다. 예를 들어서 두 개의 공간(A, B 공간)이 있다고 치자. 이 때, 각각 공간에서의 절대 온도가 각각 350, 300이라고 가정했을 때 A 공간에서 B 공간으로 에너지가 70만큼 이동 했을 때 A공간에서의 이동량은 -70이 되고 이로 인해 A 공간에서의 통계학적 엔트로피는 -5분의 1이 되고, B공간에서 이동된 에너지의 양은 +70이 되기 때문에 B공간에서의 엔트로피 값은 +30분의 7이 된다.</p>
+        <p>세 번째로 정보 엔트로피는 정보의 불확실성 또는 정보량의 기대값, 즉 평균값을 나타내는 것이다.</p>
+        <p><strong>이 중 우리가 연구할 주제는 “통계학적 엔트로피”를 활용하여 기체 분자의 이동을 확인하며 엔트로피의 증가값을 시각화하여 확인하는 것이다.</strong></p>
       </div>
     </section>
 
-    <!-- Page 2: SIMULATOR -->
     <section class="card page" id="page-sim" aria-label="엔트로피 시뮬레이션">
-      <div class="inner">
-        <h2>엔트로피 혼합 시뮬레이션 <span class="muted tiny">(빨강=Hot, 파랑=Cold)</span></h2>
-        <p class="muted">중앙 막을 열면 두 구획의 입자가 섞이며 혼합도와 엔트로피가 변화합니다. 온도차(=평균 속도차)를 조절해 열 흐름 효과도 볼 수 있어요.</p>
-      </div>
-      <div class="sim-wrap">
-        <div class="canvas-frame">
-          <canvas id="simCanvas" width="900" height="480" aria-label="혼합 시뮬레이션 캔버스"></canvas>
-          <div class="statusbar mono" role="status" aria-live="polite">
-            <span class="pill">t=<span id="t">0.00</span>s</span>
-            <span class="pill">left fraction p=<span id="p">1.00</span></span>
-            <span class="pill">H<sub>norm</sub>=<span id="H">0.00</span></span>
-            <span class="pill">N=<span id="N">300</span></span>
-            <span class="pill">ΔT slider=<span id="dT">1.5</span></span>
-            <span class="pill">barrier=<span id="barrierState" class="success">CLOSED</span></span>
+      <style>
+        :root { --bg2: #0f1220; --panel2:#171a2b; --text2:#e6e8ef; --muted2:#9aa0b4; --accent2:#78a8ff; --red:#ff4d4d; --blue:#4d9bff; --green:#51d19a; --yellow:#ffd166; }
+        #simScope * { box-sizing: border-box; }
+        #simScope .wrap2 { max-width: 1100px; margin: 0 auto; padding: 0; }
+        #simScope h1 { font-size: 20px; margin: 0 0 8px; letter-spacing:.2px }
+        #simScope .sub { color: var(--muted2); margin-bottom: 16px; }
+        #simScope .grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; }
+        #simScope .card2 { background: var(--panel2); border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+        #simScope .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        #simScope .row > * { margin: 4px 0; }
+        #simScope label { font-size: 12px; color: var(--muted2); }
+        #simScope input[type=range] { width: 180px; }
+        #simScope button { background: #222742; color: var(--text2); border: 1px solid #30365c; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600; }
+        #simScope button:hover { background: #283059; }
+        #simScope .pill { padding: 6px 10px; border-radius: 999px; background: #1e2444; border:1px solid #2a315e; font-size: 12px; color: var(--text2); }
+        #simScope .legend { display:flex; align-items:center; gap:8px; }
+        #simScope .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+        #simScope .stat { font-variant-numeric: tabular-nums; font-weight:600; color: var(--text2); }
+        #simScope canvas { display:block; width:100%; height:auto; border-radius: 12px; background: #0b0e1a; }
+        #simScope .small { font-size: 12px; color: var(--muted2); }
+        #simScope .side { display: grid; grid-template-rows: auto auto auto auto 1fr; gap: 12px; }
+        #simScope .meterWrap { background:#0b0e1a; border:1px solid #283059; border-radius:12px; height: 10px; overflow:hidden; }
+        #simScope .meterBar { height:100%; width:0%; background: linear-gradient(90deg, var(--green), var(--yellow)); }
+        #simScope .sep { height:1px; background:#2a315e; margin:12px 0; }
+        @media (max-width: 960px){ #simScope .grid{ grid-template-columns: 1fr; } }
+      </style>
+      <div id="simScope" class="inner">
+        <div class="wrap2">
+          <h1>엔트로피 혼합 시뮬레이터 (빨강/파랑, 2칸 모델)</h1>
+          <div class="sub">처음엔 왼쪽에 빨강, 오른쪽에 파랑 입자를 두고 중앙의 작은 문(개구)만 통해 서로 섞입니다. 조합론적 볼츠만 엔트로피 <code>S = k ln W</code> (여기선 <code>k=1</code>)와 열의 이동 기반 엔트로피 <code>∑ ΔQ/T</code>를 함께 봅니다.</div>
+          <div class="grid">
+            <div class="card2">
+              <canvas id="sim" width="900" height="420"></canvas>
+              <div class="row" style="justify-content:space-between; margin-top:10px">
+                <div class="row">
+                  <span class="legend"><span class="dot" style="background:var(--red)"></span><span class="small">빨강:</span> <span id="rLeft" class="stat">0</span>L / <span id="rRight" class="stat">0</span>R</span>
+                  <span class="legend" style="margin-left:12px"><span class="dot" style="background:var(--blue)"></span><span class="small">파랑:</span> <span id="bLeft" class="stat">0</span>L / <span id="bRight" class="stat">0</span>R</span>
+                  <span class="pill">문 높이: <span id="gatePerc">40</span>%</span>
+                </div>
+                <div class="row">
+                  <button id="toggle">⏯︎ 일시정지</button>
+                  <button id="reset">🔄 리셋</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="side">
+              <div class="card2">
+                <div class="row" style="justify-content:space-between">
+                  <div>
+                    <div class="small">볼츠만 엔트로피 S(t) / S<sub>max</sub></div>
+                    <div class="meterWrap"><div id="meter" class="meterBar"></div></div>
+                  </div>
+                  <div class="stat">현재: <span id="Snow">0.000</span></div>
+                </div>
+                <div class="sep"></div>
+                <canvas id="chart" width="480" height="220"></canvas>
+                <div class="small">녹색 선: S(t) / S<sub>max</sub>. 최대는 각 색 입자가 좌/우 반씩일 때입니다.</div>
+              </div>
+
+              <div class="card2" id="heatCard">
+                <div class="row" style="justify-content:space-between; align-items:flex-start">
+                  <div>
+                    <div class="small">온도 추정 (k<sub>B</sub>=1, m=1, 2D: ⟨KE⟩=kT ⇒ T=⟨0.5v²⟩)</div>
+                    <div class="row">
+                      <span class="pill">왼쪽 T<sub>L</sub>: <span id="TL">0.000</span></span>
+                      <span class="pill">오른쪽 T<sub>R</sub>: <span id="TR">0.000</span></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="small">열 엔트로피(누적)</div>
+                    <div class="row">
+                      <span class="pill">ΔS<sub>Q</sub>: <span id="SQ">0.000</span></span>
+                      <span class="pill">Q<sub>L</sub>: <span id="QL">0.000</span></span>
+                      <span class="pill">Q<sub>R</sub>: <span id="QR">0.000</span></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="small" style="margin-top:6px">입자가 문을 통과할 때 운동에너지를 해당 칸으로 전달된 열로 보고 ΔS=Σ(ΔQ/T)로 누적합니다.</div>
+              </div>
+
+              <div class="card2" id="tempControls">
+                <div class="row" style="justify-content:space-between">
+                  <div class="row">
+                    <label>왼쪽 초기 온도 T<sub>L0</sub></label>
+                    <input id="TL0Input" type="range" min="0.2" max="5.0" step="0.1" value="1.0" />
+                    <span class="stat" id="TL0Label">1.0</span>
+                  </div>
+                  <div class="row">
+                    <label>오른쪽 초기 온도 T<sub>R0</sub></label>
+                    <input id="TR0Input" type="range" min="0.2" max="5.0" step="0.1" value="1.0" />
+                    <span class="stat" id="TR0Label">1.0</span>
+                  </div>
+                </div>
+                <div class="row" style="justify-content:flex-end">
+                  <button id="applyTemps">온도 슬라이더 적용</button>
+                </div>
+                <div class="small">슬라이더를 바꾸고 "온도 슬라이더 적용"을 누르면 현재 각 칸의 속도 분포를 해당 목표 온도로 <strong>재가열/냉각(스케일링)</strong> 합니다. 리셋 시에도 슬라이더 값이 초기 조건으로 반영됩니다.</div>
+              </div>
+
+              <div class="card2">
+                <div class="row" style="justify-content:space-between">
+                  <div class="row">
+                    <label>입자(각 색)</label>
+                    <input id="nInput" type="range" min="20" max="200" step="10" value="80" />
+                    <span class="stat" id="nLabel">80</span>
+                  </div>
+                  <div class="row">
+                    <label>속도 배율</label>
+                    <input id="vInput" type="range" min="0.4" max="3.0" step="0.1" value="1.3" />
+                    <span class="stat" id="vLabel">1.3</span>
+                  </div>
+                </div>
+                <div class="row" style="justify-content:space-between; margin-top:8px">
+                  <div class="row">
+                    <label>문 높이(%)</label>
+                    <input id="gInput" type="range" min="0" max="100" step="5" value="40" />
+                  </div>
+                  <div class="row">
+                    <label>문 폭</label>
+                    <input id="gwInput" type="range" min="4" max="20" step="1" value="8" />
+                    <span class="stat" id="gwLabel">8px</span>
+                  </div>
+                </div>
+                <div class="small" style="margin-top:6px">문이 작을수록(개구율↓) 확산이 느려집니다 → 엔트로피 증가가 천천히 진행됩니다.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="inner">
-        <div class="controls">
-          <div class="control">
-            <label for="count">입자 개수 <span class="muted">(N)</span></label>
-            <div class="row">
-              <input id="count" type="range" min="50" max="800" value="300" step="10">
-              <span class="kbd" id="countLabel">300</span>
-              <button id="resetCount">재생성</button>
-            </div>
-          </div>
-          <div class="control">
-            <label for="tempDiff">온도차 (왼쪽=Hot, 오른쪽=Cold) <span class="muted">평균 속도 스케일</span></label>
-            <div class="row">
-              <input id="tempDiff" type="range" min="0.5" max="3" value="1.5" step="0.1">
-              <span class="kbd" id="tempLabel">1.5</span>
-              <button id="equalize">양쪽 같은 온도</button>
-            </div>
-          </div>
-          <div class="control">
-            <label for="speed">시뮬레이션 속도</label>
-            <div class="row">
-              <input id="speed" type="range" min="0.2" max="2.0" value="1.0" step="0.1">
-              <span class="kbd" id="speedLabel">1.0x</span>
-            </div>
-          </div>
-          <div class="control">
-            <label>막 제어</label>
-            <div class="btns">
-              <button id="toggleBarrier" class="primary">막 열기 / 닫기</button>
-              <button id="mixAll">즉시 혼합</button>
-            </div>
-          </div>
-          <div class="control">
-            <label>재생 제어</label>
-            <div class="btns">
-              <button id="play" class="primary">▶ 시작</button>
-              <button id="pause">⏸ 정지</button>
-              <button id="step">⏭ 한 프레임</button>
-              <button id="reset">↺ 초기화</button>
-              <button id="snapshot">📷 스냅샷 저장</button>
-            </div>
-          </div>
-        </div>
-      </div>
+
+      <script>
+      (() => {
+        function buildLogFact(maxN) { const lf = new Float64Array(maxN+1); lf[0]=0; for(let i=1;i<=maxN;i++) lf[i]=lf[i-1]+Math.log(i); return lf; }
+        function lnChoose(n,k,lf){ if(k<0||k>n) return -Infinity; return lf[n]-lf[k]-lf[n-k]; }
+        function randn(){ let u=0, v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+        const sim = document.getElementById('sim');
+        const ctx = sim.getContext('2d');
+        const chart = document.getElementById('chart');
+        const cctx = chart.getContext('2d');
+
+        const W = sim.width, H = sim.height; const midX = W/2;
+        let gatePct = 40; let gateWidth = 8; const radius = 3.2;
+        let speedScale = 1.3; let NperColor = 80; let running = true;
+
+        const rL = document.getElementById('rLeft'); const rR = document.getElementById('rRight');
+        const bL = document.getElementById('bLeft'); const bR = document.getElementById('bRight');
+        const Sspan = document.getElementById('Snow'); const meter = document.getElementById('meter');
+        const gatePercSpan = document.getElementById('gatePerc'); const gwLabel = document.getElementById('gwLabel');
+
+        const TLspan = document.getElementById('TL'); const TRspan = document.getElementById('TR');
+        const SQspan = document.getElementById('SQ'); const QLspan = document.getElementById('QL'); const QRspan = document.getElementById('QR');
+
+        const TL0Input = document.getElementById('TL0Input'); const TR0Input = document.getElementById('TR0Input');
+        const TL0Label = document.getElementById('TL0Label'); const TR0Label = document.getElementById('TR0Label');
+        const applyTempsBtn = document.getElementById('applyTemps');
+
+        const nInput = document.getElementById('nInput'); const vInput = document.getElementById('vInput');
+        const gInput = document.getElementById('gInput'); const gwInput = document.getElementById('gwInput');
+        const nLabel = document.getElementById('nLabel');
+
+        document.getElementById('toggle').onclick = () => { running=!running; }
+        document.getElementById('reset').onclick = resetAll;
+        nInput.oninput = (e)=>{ NperColor = +e.target.value; nLabel.textContent = NperColor; resetAll(); }
+        vInput.oninput = (e)=>{ speedScale = +e.target.value; document.getElementById('vLabel').textContent = speedScale.toFixed(1); }
+        gInput.oninput = (e)=>{ gatePct = +e.target.value; gatePercSpan.textContent = gatePct; }
+        gwInput.oninput = (e)=>{ gateWidth = +e.target.value; gwLabel.textContent = gateWidth+"px"; }
+        TL0Input.oninput = ()=>{ TL0Label.textContent = (+TL0Input.value).toFixed(1); };
+        TR0Input.oninput = ()=>{ TR0Label.textContent = (+TR0Input.value).toFixed(1); };
+        applyTempsBtn.onclick = ()=>{ rethermalize('L', +TL0Input.value); rethermalize('R', +TR0Input.value); };
+
+        let particles = [];
+        let logFact = buildLogFact(20000);
+        let maxLogW = 0; const kB = 1;
+        let QL = 0, QR = 0, SQ = 0;
+
+        function initParticles() {
+          particles = [];
+          for(let i=0;i<NperColor;i++) particles.push(makeParticle(true));
+          for(let i=0;i<NperColor;i++) particles.push(makeParticle(false));
+          const lnWmaxRed = lnChoose(NperColor, Math.floor(NperColor/2), logFact);
+          const lnWmaxBlue = lnChoose(NperColor, Math.floor(NperColor/2), logFact);
+          maxLogW = lnWmaxRed + lnWmaxBlue;
+          history = []; t = 0; QL = 0; QR = 0; SQ = 0;
+          rethermalize('L', +TL0Input.value);
+          rethermalize('R', +TR0Input.value);
+        }
+        function makeParticle(isRed){
+          let x, y;
+          if(isRed) { x = Math.random()*(midX - 2*radius) + radius; } else { x = Math.random()*(midX - 2*radius) + midX + radius; }
+          y = Math.random()*(H - 2*radius) + radius;
+          let vx = randn(), vy = randn();
+          return {x,y,vx,vy, red:isRed};
+        }
+        function rethermalize(side, Ttarget){
+          const leftSide = (side==='L');
+          let count=0, sumKE=0;
+          for(const p of particles){ const isLeft = p.x < midX; if((leftSide && isLeft) || (!leftSide && !isLeft)){ count++; sumKE += 0.5*(p.vx*p.vx + p.vy*p.vy); } }
+          if(count===0) return; let Tcurr = sumKE / count; if(!isFinite(Tcurr) || Tcurr<=0) Tcurr = 1e-6;
+          const s = Math.sqrt(Ttarget / Tcurr);
+          for(const p of particles){ const isLeft = p.x < midX; if((leftSide && isLeft) || (!leftSide && !isLeft)){ p.vx *= s; p.vy *= s; } }
+        }
+        function entropyNow(){
+          let rLcount=0, bLcount=0, leftCount=0, rightCount=0, sumKEL=0, sumKER=0;
+          for(const p of particles){ const left = (p.x < midX); const KE = 0.5*(p.vx*p.vx + p.vy*p.vy); if(left){ leftCount++; sumKEL += KE; if(p.red) rLcount++; else bLcount++; } else { rightCount++; sumKER += KE; } }
+          const rRcount = NperColor - rLcount; const bRcount = NperColor - bLcount; rL.textContent = rLcount; rR.textContent = rRcount; bL.textContent = bLcount; bR.textContent = bRcount;
+          const lnW = lnChoose(NperColor, rLcount, logFact) + lnChoose(NperColor, bLcount, logFact);
+          const S = kB * lnW; const Smax = kB * maxLogW; const Snorm = Math.max(0, Math.min(1, S / Smax));
+          Sspan.textContent = Snorm.toFixed(3); meter.style.width = (Snorm*100).toFixed(1)+"%";
+          const TL = leftCount>0 ? (sumKEL/leftCount) : 0; const TR = rightCount>0 ? (sumKER/rightCount) : 0;
+          TLspan.textContent = TL.toFixed(3); TRspan.textContent = TR.toFixed(3);
+          SQspan.textContent = SQ.toFixed(3); QLspan.textContent = QL.toFixed(3); QRspan.textContent = QR.toFixed(3);
+          return Snorm;
+        }
+        function step(dt){
+          const openHalf = (gatePct/100) * (H/2); const gateTop = H/2 - openHalf, gateBot = H/2 + openHalf;
+          for(const p of particles){
+            const prevLeft = (p.x < midX);
+            p.x += p.vx * speedScale * dt; p.y += p.vy * speedScale * dt;
+            if(p.y < radius){ p.y = radius; p.vy *= -1; } else if(p.y > H - radius) { p.y = H - radius; p.vy *= -1; }
+            if(p.x < radius){ p.x = radius; p.vx *= -1; } else if(p.x > W - radius){ p.x = W - radius; p.vx *= -1; }
+            const nearWall = Math.abs(p.x - midX) <= (gateWidth/2 + radius);
+            const withinGate = (p.y >= gateTop && p.y <= gateBot);
+            if(nearWall){ if(!withinGate){ if(p.x < midX) { p.x = midX - (gateWidth/2 + radius); } else { p.x = midX + (gateWidth/2 + radius); } p.vx *= -1; } }
+            const nowLeft = (p.x < midX);
+            if(withinGate && (prevLeft !== nowLeft)){
+              const KE = 0.5*(p.vx*p.vx + p.vy*p.vy);
+              let lCount=0,rCount=0,sumL=0,sumR=0; for(const q of particles){ const left = (q.x < midX); const ke = 0.5*(q.vx*q.vx + q.vy*q.vy); if(left){ lCount++; sumL+=ke; } else { rCount++; sumR+=ke; } }
+              const TL = lCount? (sumL/lCount) : 1e-6; const TR = rCount? (sumR/rCount) : 1e-6;
+              if(prevLeft && !nowLeft){ QL -= KE; QR += KE; SQ += (-KE)/TL + (KE)/TR; }
+              else if(!prevLeft && nowLeft){ QR -= KE; QL += KE; SQ += (-KE)/TR + (KE)/TL; }
+            }
+          }
+        }
+        function draw(){
+          ctx.clearRect(0,0,W,H); ctx.fillStyle = '#0b0e1a'; ctx.fillRect(0,0,W,H);
+          const openHalf = (gatePct/100) * (H/2); const gateTop = H/2 - openHalf, gateBot = H/2 + openHalf;
+          ctx.fillStyle = '#263055'; ctx.fillRect(midX - gateWidth/2, 0, gateWidth, gateTop); ctx.fillRect(midX - gateWidth/2, gateBot, gateWidth, H-gateBot);
+          const grad = ctx.createLinearGradient(midX-8, 0, midX+8, 0); grad.addColorStop(0, 'rgba(120,168,255,0)'); grad.addColorStop(0.5, 'rgba(120,168,255,0.22)'); grad.addColorStop(1, 'rgba(120,168,255,0)'); ctx.fillStyle = grad; ctx.fillRect(midX-12, gateTop, 24, gateBot-gateTop);
+          for(const p of particles){ ctx.beginPath(); ctx.arc(p.x, p.y, radius, 0, 2*Math.PI); ctx.fillStyle = p.red ? 'rgba(255,77,77,0.95)' : 'rgba(77,155,255,0.95)'; ctx.fill(); }
+        }
+        let history = []; let t = 0;
+        function drawChart(){
+          const padding = 28; const w = chart.width, h = chart.height; cctx.clearRect(0,0,w,h);
+          cctx.strokeStyle = '#32406f'; cctx.lineWidth = 1; cctx.beginPath(); cctx.moveTo(padding, h - padding); cctx.lineTo(w - padding, h - padding); cctx.moveTo(padding, h - padding); cctx.lineTo(padding, padding); cctx.stroke();
+          cctx.fillStyle = '#9aa0b4'; cctx.font = '12px ui-sans-serif';
+          [0,0.5,1].forEach(v => { const y = (h - padding) - v*(h - 2*padding); cctx.fillText(v.toFixed(1), 6, y+4); cctx.strokeStyle = 'rgba(154,160,180,0.12)'; cctx.beginPath(); cctx.moveTo(padding, y); cctx.lineTo(w - padding, y); cctx.stroke(); });
+          if(history.length<2) return; const tMin = history[0][0]; const tMax = history[history.length-1][0];
+          const xFor = (tt)=> padding + (tt - tMin) / Math.max(1e-6, (tMax - tMin)) * (w - 2*padding);
+          const yFor = (s)=> (h - padding) - s*(h - 2*padding);
+          cctx.lineWidth = 2; cctx.strokeStyle = '#51d19a'; cctx.beginPath(); cctx.moveTo(xFor(history[0][0]), yFor(history[0][1])); history.forEach(([tt, ss])=> cctx.lineTo(xFor(tt), yFor(ss))); cctx.stroke();
+        }
+        let last= performance.now();
+        function loop(now){
+          const dt = Math.min(0.033, (now-last)/16); last = now; if(running){ step(dt); }
+          const s = entropyNow(); if(history.length===0 || (t - history[history.length-1][0])>0.05){ history.push([t, s]); if(history.length>1200) history.shift(); }
+          draw(); drawChart(); if(running) t += dt*0.016*60; requestAnimationFrame(loop);
+        }
+        function resetAll(){ initParticles(); }
+        // boot
+        document.getElementById('TL0Label').textContent = (+document.getElementById('TL0Input').value).toFixed(1);
+        document.getElementById('TR0Label').textContent = (+document.getElementById('TR0Input').value).toFixed(1);
+        resetAll(); requestAnimationFrame(loop);
+      })();
+      </script>
     </section>
 
-    <!-- Pager Bar -->
     <div class="pagebar" role="navigation" aria-label="페이지 네비게이션">
       <button id="prevPage">← 이전</button>
       <div class="dots" aria-hidden="true">
@@ -259,306 +366,31 @@
       <span class="pagecount" id="pageCounter">1 / 3</span>
       <button id="nextPage">다음 →</button>
     </div>
-      <button id="nextPage">다음 →</button>
-    </div>
   </main>
 
-  <footer class="wrap tiny">
-    <div>© <span id="year"></span> EntropyLab. MIT License.</div>
-  </footer>
-
-<script>
-(()=>{
-  // ====== Utility ======
-  const rnd = (a,b)=> Math.random()*(b-a)+a;
-  const clamp = (v, lo, hi)=> Math.max(lo, Math.min(hi, v));
-  const kB = 1; // 시각화 정규화 용도 (절대 단위 아님)
-
-  // ====== Canvas & State ======
-  const canvas = document.getElementById('simCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width; const H = canvas.height; const midX = W/2;
-  let particles = []; // {x,y,vx,vy,r,color,side}
-  let N = 300;
-  let barrierClosed = true;
-  let time = 0;
-  let speedScale = 1.0;
-  let playing = false;
-  let dt = 1/60;
-  const radius = 3.2;
-
-  // Controls
-  const $ = id=> document.getElementById(id);
-  const tEl=$('t'), pEl=$('p'), HEl=$('H'), NEl=$('N'), dTEl=$('dT'), barrierState=$('barrierState');
-  const count=$('count'), tempDiff=$('tempDiff'), speed=$('speed');
-  const countLabel=$('countLabel'), tempLabel=$('tempLabel'), speedLabel=$('speedLabel');
-  const resetCount=$('resetCount'), equalize=$('equalize');
-  const toggleBarrier=$('toggleBarrier'), mixAll=$('mixAll');
-  const playBtn=$('play'), pauseBtn=$('pause'), stepBtn=$('step'), resetBtn=$('reset'), snapshot=$('snapshot');
-
-  // ====== Init ======
-  function initParticles(){
-    particles = [];
-    const hotScale = parseFloat(tempDiff.value); // 왼쪽 평균 속도 배율
-    const coldScale = 1.0;                       // 오른쪽 기준
-    const leftN = Math.floor(N/2), rightN = N-leftN;
-    for(let i=0;i<leftN;i++){
-      particles.push(makeParticle(rnd(radius, midX - radius), rnd(radius, H-radius), hotScale, 'hot'));
-    }
-    for(let i=0;i<rightN;i++){
-      particles.push(makeParticle(rnd(midX+radius, W - radius), rnd(radius, H-radius), coldScale, 'cold'));
-    }
-    updateIndicators();
-    draw(0);
-  }
-
-  function makeParticle(x,y, tempScale, tag){
-    const theta = rnd(0, Math.PI*2);
-    // 맥스웰 근사: 속도 크기 ~ tempScale * (1 + 난수)
-    const base = 60; // 픽셀/초 기준
-    const vmag = base * tempScale * (0.5 + Math.random());
-    return { x, y, vx: vmag*Math.cos(theta), vy: vmag*Math.sin(theta), r: radius, tag };
-  }
-
-  // ====== Physics Step ======
-  function stepOnce(){
-    const sdt = dt * speedScale;
-    // 이동
-    for(const p of particles){
-      p.x += p.vx * sdt;
-      p.y += p.vy * sdt;
-      // 벽 반사
-      if(p.x < p.r){ p.x = p.r; p.vx *= -1; }
-      if(p.x > W - p.r){ p.x = W - p.r; p.vx *= -1; }
-      if(p.y < p.r){ p.y = p.r; p.vy *= -1; }
-      if(p.y > H - p.r){ p.y = H - p.r; p.vy *= -1; }
-      // 중앙 막 충돌 (닫힘일 때만)
-      if(barrierClosed){
-        if(Math.abs(p.x - midX) < p.r){
-          // 막은 바닥부터 천장까지
-          if(p.x < midX){ p.x = midX - p.r; }
-          else { p.x = midX + p.r; }
-          p.vx *= -1;
-        }
-      }
-    }
-    time += sdt;
-  }
-
-  // ====== Entropy (mixing) ======
-  function calcMetrics(){
-    let left=0; for(const p of particles){ if(p.x < midX) left++; }
-    const p = particles.length? left/particles.length : 0;
-    // Shannon 혼합 엔트로피 (0~1)
-    let Hn = 0;
-    if(p>0 && p<1){ Hn = - (p*Math.log2(p) + (1-p)*Math.log2(1-p)); }
-    Hn = Hn / 1; // 이미 log2 기준이므로 최대값=1
-    return {p, Hn};
-  }
-
-  // ====== Render ======
-  function draw(alpha=0){
-    // 배경
-    ctx.clearRect(0,0,W,H);
-    // 구획 배경 살짝 그라데이션
-    const g = ctx.createLinearGradient(0,0,W,0);
-    g.addColorStop(0, '#0b1226');
-    g.addColorStop(0.5, '#0b1226');
-    g.addColorStop(0.5, '#0a0f20');
-    g.addColorStop(1, '#0a0f20');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-
-    // 중앙 막
-    if(barrierClosed){
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(midX-2, 0, 4, H);
-    } else {
-      // 점선만
-      ctx.setLineDash([6,6]);
-      ctx.strokeStyle = '#1f2937';
-      ctx.beginPath(); ctx.moveTo(midX,0); ctx.lineTo(midX,H); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    // 입자
-    for(const p of particles){
-      ctx.beginPath();
-      ctx.fillStyle = (p.tag==='hot')? '#ef4444' : '#3b82f6';
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // 격자 느낌
-    ctx.strokeStyle = '#0f1a33';
-    ctx.lineWidth=1;
-    for(let y=0;y<H;y+=24){ ctx.beginPath(); ctx.moveTo(0,y+.5); ctx.lineTo(W,y+.5); ctx.stroke(); }
-  }
-
-  // ====== UI Wiring ======
-  function updateIndicators(){
-    const {p, Hn} = calcMetrics();
-    tEl.textContent = time.toFixed(2);
-    pEl.textContent = p.toFixed(2);
-    HEl.textContent = Hn.toFixed(3);
-    NEl.textContent = String(N);
-    dTEl.textContent = parseFloat(tempDiff.value).toFixed(1);
-    barrierState.textContent = barrierClosed? 'CLOSED':'OPEN';
-    barrierState.className = barrierClosed? 'success':'danger';
-  }
-
-  let rafId = null;
-  function loop(){
-    stepOnce();
-    draw();
-    updateIndicators();
-    if(playing) rafId = requestAnimationFrame(loop);
-  }
-
-  // Controls: sliders
-  count.addEventListener('input', ()=>{ N = parseInt(count.value,10); countLabel.textContent = String(N); });
-  resetCount.addEventListener('click', ()=>{ initParticles(); });
-
-  tempDiff.addEventListener('input', ()=>{
-    tempLabel.textContent = parseFloat(tempDiff.value).toFixed(1);
-    // 온도차 즉시 반영: 왼쪽 입자들의 평균 속도만 재스케일
-    const hotScale = parseFloat(tempDiff.value);
-    for(const p of particles){ if(p.x < midX){ const s = hotScale; const th = Math.atan2(p.vy,p.vx); const speed = 60 * s * (0.5 + Math.random()); p.vx = speed*Math.cos(th); p.vy = speed*Math.sin(th); p.tag='hot'; } else { p.tag='cold'; } }
-  });
-  equalize.addEventListener('click',()=>{ tempDiff.value = 1.0; tempLabel.textContent = '1.0'; const s=1.0; for(const p of particles){ const th=Math.atan2(p.vy,p.vx); const speed = 60 * s * (0.5 + Math.random()); p.vx=speed*Math.cos(th); p.vy=speed*Math.sin(th); p.tag=(p.x<midX)?'hot':'cold'; } });
-
-  speed.addEventListener('input', ()=>{ speedScale = parseFloat(speed.value); speedLabel.textContent = speedScale.toFixed(1)+'x'; });
-
-  // Barrier & mix
-  toggleBarrier.addEventListener('click', ()=>{ barrierClosed = !barrierClosed; updateIndicators(); });
-  mixAll.addEventListener('click', ()=>{ barrierClosed = false; // 중앙을 열고, 반씩 오른쪽/왼쪽으로 무작위 이동
-    for(const p of particles){ p.x = rnd(radius, W - radius); }
-    updateIndicators();
-  });
-
-  // Play controls
-  playBtn.addEventListener('click', ()=>{ if(!playing){ playing=true; loop(); }});
-  pauseBtn.addEventListener('click', ()=>{ playing=false; cancelAnimationFrame(rafId); });
-  stepBtn.addEventListener('click', ()=>{ playing=false; cancelAnimationFrame(rafId); stepOnce(); draw(); updateIndicators(); });
-  resetBtn.addEventListener('click', ()=>{ playing=false; cancelAnimationFrame(rafId); time=0; barrierClosed=true; initParticles(); updateIndicators(); });
-
-  // Snapshot
-  snapshot.addEventListener('click', ()=>{
-    const url = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = url; a.download = `entropylab_${Date.now()}.png`; a.click();
-  });
-
-  // Pager logic
-  const pages = [
-    document.getElementById('page-cover'),
-    document.getElementById('page-intro'),
-    document.getElementById('page-sim')
-  ];
-  let currentPage = 0;
-  const prevPageBtn = document.getElementById('prevPage');
-  const nextPageBtn = document.getElementById('nextPage');
-  const startBtn = document.getElementById('startBtn');
-  const pageCounter = document.getElementById('pageCounter');
-
-  function updateDots(){
-    document.querySelectorAll('.dot').forEach(dot=>{
-      dot.classList.toggle('active', parseInt(dot.dataset.index,10)===currentPage);
-    });
-  }
-  function showPage(i){
-    currentPage = Math.max(0, Math.min(pages.length-1, i));
-    pages.forEach((sec, idx)=>{ sec.classList.toggle('active', idx===currentPage); sec.setAttribute('aria-hidden', idx===currentPage? 'false':'true'); });
-    prevPageBtn.disabled = currentPage===0;
-    nextPageBtn.disabled = currentPage===pages.length-1;
-    if(pageCounter) pageCounter.textContent = (currentPage+1)+' / '+pages.length;
-    updateDots();
-    const ids=['page-cover','page-intro','page-sim'];
-    history.replaceState(null, '', '#'+ids[currentPage]);
-  }
-
-  prevPageBtn.addEventListener('click', ()=> showPage(currentPage-1));
-  nextPageBtn.addEventListener('click', ()=> showPage(currentPage+1));
-  if(startBtn) startBtn.addEventListener('click', ()=> showPage(1));
-  document.querySelectorAll('a[data-goto]').forEach(a=> a.addEventListener('click', (e)=>{
-    const idx=parseInt(a.dataset.goto,10); if(!isNaN(idx)){ e.preventDefault(); showPage(idx); }
-  }));
-  window.addEventListener('keydown', (e)=>{ if(e.key==='ArrowRight') showPage(currentPage+1); else if(e.key==='ArrowLeft') showPage(currentPage-1); });
-  const hashMap = { '#page-cover':0, '#page-intro':1, '#page-sim':2 };
-  const idx0 = hashMap[location.hash] ?? 0;
-
-  // THEME toggle (persist)
-  const themeBtn = document.getElementById('themeToggle');
-  const savedTheme = localStorage.getItem('entropylab-theme');
-  if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
-  if(themeBtn){ themeBtn.addEventListener('click', ()=>{
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = (cur==='light')? 'dark':'light';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('entropylab-theme', next);
-  }); }
-
-  // MINI DEMO: H(p) chart
-  const pDemo = document.getElementById('pDemo');
-  const pDemoVal = document.getElementById('pDemoVal');
-  const HDemoVal = document.getElementById('HDemoVal');
-  const pDemoReset = document.getElementById('pDemoReset');
-  const chart = document.getElementById('entropyChart');
-  const cctx = chart? chart.getContext('2d') : null;
-
-  function Hbin(p){
-    if(p<=0 || p>=1) return 0;
-    return - (p*Math.log2(p) + (1-p)*Math.log2(1-p));
-  }
-  function drawEntropyChart(){
-    if(!cctx) return;
-    const W = chart.width, H = chart.height;
-    cctx.clearRect(0,0,W,H);
-    // axes
-    cctx.strokeStyle = '#1f2937'; cctx.lineWidth = 1;
-    cctx.beginPath(); cctx.moveTo(40, H-30); cctx.lineTo(W-10, H-30); cctx.stroke();
-    cctx.beginPath(); cctx.moveTo(40, H-30); cctx.lineTo(40, 10); cctx.stroke();
-    // curve H(p)
-    cctx.beginPath();
-    for(let i=0;i<=200;i++){
-      const p = i/200; const h = Hbin(p);
-      const x = 40 + p*(W-60);
-      const y = (H-30) - (h/1.0)*(H-50);
-      if(i===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
-    }
-    cctx.strokeStyle = '#22d3ee'; cctx.lineWidth = 2; cctx.stroke();
-    // tick labels
-    cctx.fillStyle = '#94a3b8'; cctx.font = '12px ui-monospace, monospace';
-    cctx.fillText('0', 38, H-12);
-    cctx.fillText('1', W-18, H-12);
-    cctx.fillText('H', 24, 16);
-    // current p marker
-    if(pDemo){
-      const p = parseFloat(pDemo.value);
-      const h = Hbin(p);
-      const x = 40 + p*(W-60);
-      const y = (H-30) - (h/1.0)*(H-50);
-      cctx.beginPath(); cctx.arc(x,y,4,0,Math.PI*2); cctx.fillStyle = '#a78bfa'; cctx.fill();
-    }
-  }
-  function updateDemo(){
-    if(!pDemo) return; const p = parseFloat(pDemo.value);
-    pDemoVal.textContent = p.toFixed(2);
-    HDemoVal.textContent = Hbin(p).toFixed(3);
-    drawEntropyChart();
-  }
-  if(pDemo){
-    pDemo.addEventListener('input', updateDemo);
-    if(pDemoReset){ pDemoReset.addEventListener('click', ()=>{ pDemo.value = 0.5; updateDemo(); }); }
-  }
-
-  // Original bootstrap
-  document.getElementById('year').textContent = new Date().getFullYear();
-  initParticles();
-  draw(0);
-  showPage(idx0);
-  updateDemo();
-
-})();
-</script>
+  <script>
+    const pages = [document.getElementById('page-cover'), document.getElementById('page-intro'), document.getElementById('page-sim')];
+    let currentPage = 0;
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const startBtn = document.getElementById('startBtn');
+    const pageCounter = document.getElementById('pageCounter');
+    function updateDots(){ document.querySelectorAll('.dot').forEach(dot=> dot.classList.toggle('active', parseInt(dot.dataset.index,10)===currentPage)); }
+    function showPage(i){ currentPage = Math.max(0, Math.min(pages.length-1, i)); pages.forEach((sec, idx)=> sec.classList.toggle('active', idx===currentPage)); prevPageBtn.disabled = currentPage===0; nextPageBtn.disabled = currentPage===pages.length-1; if(pageCounter) pageCounter.textContent = (currentPage+1)+' / '+pages.length; const ids=['page-cover','page-intro','page-sim']; history.replaceState(null, '', '#'+ids[currentPage]); updateDots(); }
+    prevPageBtn.addEventListener('click', ()=> showPage(currentPage-1));
+    nextPageBtn.addEventListener('click', ()=> showPage(currentPage+1));
+    if(startBtn) startBtn.addEventListener('click', ()=> showPage(1));
+    document.querySelectorAll('a[data-goto]').forEach(a=> a.addEventListener('click', (e)=>{ const idx=parseInt(a.dataset.goto,10); if(!isNaN(idx)){ e.preventDefault(); showPage(idx); } }));
+    window.addEventListener('keydown', (e)=>{ if(e.key==='ArrowRight') showPage(currentPage+1); else if(e.key==='ArrowLeft') showPage(currentPage-1); });
+    const hashMap = { '#page-cover':0, '#page-intro':1, '#page-sim':2 }; const idx0 = hashMap[location.hash] ?? 0; showPage(idx0);
+  </script>
 </body>
 </html>
+""")
+
+# Create a ZIP for downloading
+zip_path = "/mnt/data/entropylab-clean.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    z.write(index_path, arcname="index.html")
+
+zip_path
