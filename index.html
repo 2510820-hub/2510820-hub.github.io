@@ -6,7 +6,11 @@
   <title>EntropyLab · 엔트로피 시뮬레이션</title>
   <meta name="description" content="빨간/파란 입자 혼합과 열 이동으로 엔트로피 변화를 직관적으로 시각화하는 웹 시뮬레이터 템플릿.">
   <meta name="theme-color" content="#0f172a">
-  <link rel="icon" href="favicon.svg">
+  <!-- Open Graph -->
+  <meta property="og:title" content="EntropyLab · 엔트로피 시뮬레이션">
+  <meta property="og:description" content="빨간/파란 입자 혼합과 열 이동으로 엔트로피 변화를 시각화.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="">
   <style>
     :root{
       --bg: #0b1020; /* slate-950 */
@@ -73,22 +77,114 @@
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
     .success{color:var(--ok)}
     .danger{color:var(--danger)}
-  </style>
+  .page{display:none}
+.page.active{display:block}
+.pagebar{position:sticky; bottom:12px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(11,16,32,.75); border:1px solid #111827; border-radius:12px; padding:8px 12px; backdrop-filter:saturate(160%) blur(10px)}
+.pagebar button{border-radius:10px}
+.dots{display:flex; gap:8px}
+.dot{width:8px; height:8px; border-radius:50%; background:#1f2937; display:inline-block}
+.dot.active{background:#22d3ee}
+.page{display:none; opacity:0; transform:translateY(6px); transition:opacity .25s ease, transform .25s ease}
+.page.active{display:block; opacity:1; transform:none}
+.pagebar{position:sticky; bottom:12px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(11,16,32,.75); border:1px solid #111827; border-radius:12px; padding:8px 12px; backdrop-filter:saturate(160%) blur(10px)}
+.pagebar button{border-radius:10px}
+.dots{display:flex; gap:8px}
+.dot{width:8px; height:8px; border-radius:50%; background:#1f2937; display:inline-block}
+.dot.active{background:#22d3ee}
+.pagecount{font:12px; color:var(--muted)}
+
+/* Light theme */
+:root[data-theme="light"]{
+  --bg:#f8fafc; --panel:#ffffff; --muted:#475569; --text:#0f172a; --accent:#06b6d4; --accent-2:#7c3aed; --danger:#dc2626; --ok:#16a34a; --grid:#e2e8f0;
+}
+:root[data-theme="light"] body{background:linear-gradient(180deg,#f1f5f9,#e2e8f0)}
+:root[data-theme="light"] .card{background:linear-gradient(180deg,#ffffff,#f8fafc); border-color:#e2e8f0}
+:root[data-theme="light"] .canvas-frame{background:#f8fafc; border-color:#e2e8f0}
+:root[data-theme="light"] .statusbar{background:#f1f5f9; border-color:#e2e8f0}
+</style>
 </head>
 <body>
   <header>
     <div class="wrap row">
       <div class="brand"><div class="logo" aria-hidden></div>EntropyLab</div>
       <nav>
-        <a href="#sim">Simulation</a>
-        <a href="#theory">Theory</a>
-        <a href="#docs">Docs</a>
+        <a href="#page-cover" data-goto="0">표지</a>
+        <a href="#page-intro" data-goto="1">소개</a>
+        <a href="#page-sim" data-goto="2">시뮬레이터</a>
+        <button id="themeToggle" class="kbd" style="margin-left:8px" title="테마 전환">🌗 테마</button>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="card" id="sim" aria-label="엔트로피 시뮬레이션">
+    <!-- Page 0: COVER -->
+    <section class="card page" id="page-cover" aria-label="표지">
+      <div class="inner">
+        <h1 style="margin:0 0 6px;font-size:28px">EntropyLab</h1>
+        <p class="muted" style="margin-top:0">엔트로피를 <strong>직관</strong>과 <strong>시뮬레이션</strong>으로 배우는 작은 실험실</p>
+        <div class="row" style="margin-top:12px; gap:12px; flex-wrap:wrap">
+          <button class="primary" id="startBtn">시작하기 →</button>
+          <a class="kbd" href="#page-intro" data-goto="1" role="button">개념 소개 보기</a>
+        </div>
+      </div>
+      <div class="inner">
+        <ul class="muted">
+          <li>두 구획, 중앙 막, 온도차(평균 속도)로 혼합 과정을 관찰</li>
+          <li>정규화된 Shannon 혼합 엔트로피로 상태를 수치화</li>
+          <li>PNG 스냅샷 저장, 반응형 UI, 접근성 라벨</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Page 1: INTRO -->
+    <section class="card page" id="page-intro" aria-label="엔트로피 소개">
+      <div class="inner">
+        <h2>엔트로피 한눈에 보기</h2>
+        <p class="muted">같은 단어라도 맥락에 따라 의미가 조금씩 달라요. 세 가지 관점으로 간단히 정리하고, 아래에 <strong>H(p) 미니 데모</strong>도 넣었습니다.</p>
+      </div>
+      <div class="inner">
+        <h3>① 정보 엔트로피 (Information entropy)</h3>
+        <p class="muted">불확실성/평균 정보량 <span class="mono">H = - Σ p_i · log₂ p_i</span> (단위: bit). 동일확률일 때 최대.</p>
+        <ul>
+          <li>예) 동전: <span class="mono">p(앞)=p(뒤)=0.5</span> → <span class="mono">H=1 bit</span></li>
+          <li>예) 치우친 동전: <span class="mono">p=0.9</span> → <span class="mono">H≈0.47 bit</span></li>
+        </ul>
+      </div>
+      <div class="inner">
+        <h3>② 열역학적 엔트로피 (Thermodynamic entropy)</h3>
+        <p class="muted">가역 열교환의 적분 <span class="mono">ΔS = ∫ δQ_rev/T</span> (단위: J/K).</p>
+        <ul>
+          <li>자유팽창: 외부 일 없이 부피가 늘면 <em>미시상태 수</em>가 크게 증가 → S 증가</li>
+          <li>제2법칙: 고립계에서는 <span class="mono">ΔS ≥ 0</span></li>
+        </ul>
+      </div>
+      <div class="inner">
+        <h3>③ 통계적 엔트로피 (Statistical entropy)</h3>
+        <p class="muted"><span class="mono">S = k_B ln Ω</span>. 가능 배치 수 <span class="mono">Ω</span>의 로그. 동일확률이면 <span class="mono">H = S / (k_B ln 2)</span>.</p>
+        <ul>
+          <li>동전 N개의 앞면 k개 배치는 <span class="mono">Ω = C(N,k)</span></li>
+        </ul>
+      </div>
+      <div class="inner">
+        <h3 style="margin-bottom:8px">미니 데모: H(p) 곡선</h3>
+        <p class="muted">슬라이더로 <span class="mono">p</span>(왼쪽 점유/확률)를 조절하면 <span class="mono">H(p)=-[p log₂ p + (1-p) log₂(1-p)]</span>가 어떻게 바뀌는지 확인해 보세요.</p>
+        <div class="row" style="gap:12px; align-items:center">
+          <input id="pDemo" type="range" min="0.0" max="1.0" step="0.01" value="0.5" style="width:280px">
+          <span class="kbd">p=<span id="pDemoVal">0.50</span></span>
+          <span class="kbd">H(p)=<span id="HDemoVal">1.000</span> bit</span>
+          <button id="pDemoReset">중앙(0.5)</button>
+        </div>
+        <div class="canvas-frame" style="margin-top:10px">
+          <canvas id="entropyChart" width="900" height="220" aria-label="H(p) 차트"></canvas>
+        </div>
+      </div>
+      <div class="inner">
+        <p class="muted">우리 시뮬레이터(다음 페이지)는 공간을 좌/우로 나눠 점유비율 <span class="mono">p</span>에서 유도한 <strong>혼합 정보 엔트로피</strong>를 표시합니다.</p>
+      </div>
+    </section>
+
+    <!-- Page 2: SIMULATOR -->
+    <section class="card page" id="page-sim" aria-label="엔트로피 시뮬레이션">
       <div class="inner">
         <h2>엔트로피 혼합 시뮬레이션 <span class="muted tiny">(빨강=Hot, 파랑=Cold)</span></h2>
         <p class="muted">중앙 막을 열면 두 구획의 입자가 섞이며 혼합도와 엔트로피가 변화합니다. 온도차(=평균 속도차)를 조절해 열 흐름 효과도 볼 수 있어요.</p>
@@ -152,26 +248,19 @@
       </div>
     </section>
 
-    <section class="card" id="theory">
-      <div class="inner">
-        <h2>간단 이론</h2>
-        <p class="muted">여기서는 구획 A(왼쪽)와 B(오른쪽)에 있는 입자 수 비율 p = N<sub>A</sub>/N 으로부터 Shannon 형태의 혼합 엔트로피
-          <span class="mono">H = -[ p ln p + (1-p) ln(1-p) ] / ln 2</span> (0–1 정규화)을 표시합니다. 이는 볼츠만 엔트로피 <span class="mono">S = k_B ln Ω</span>의 직관적 근사로 볼 수 있어요.
-          열 차이는 평균 속도 차로 모사합니다(충돌은 벽/막에 대해 탄성 반사).</p>
+    <!-- Pager Bar -->
+    <div class="pagebar" role="navigation" aria-label="페이지 네비게이션">
+      <button id="prevPage">← 이전</button>
+      <div class="dots" aria-hidden="true">
+        <span class="dot" data-index="0"></span>
+        <span class="dot" data-index="1"></span>
+        <span class="dot" data-index="2"></span>
       </div>
-    </section>
-
-    <section class="card" id="docs">
-      <div class="inner">
-        <h2>프로젝트 메모</h2>
-        <ul>
-          <li>GitHub Pages에서 바로 동작하는 단일 <span class="mono">index.html</span> 파일입니다.</li>
-          <li>외부 라이브러리 없이 순수 HTML/CSS/JS로 구현되어 로컬에서도 바로 실행됩니다.</li>
-          <li>엔트로피 정의를 Clausius 형태 (<span class="mono">dS = δQ/T</span>)로 확장하고 싶다면, 격자 온도장과 에너지 교환 모델(입자 속도 재샘플링)을 추가하세요.</li>
-          <li>접근성: 모든 컨트롤에 <span class="mono">label</span>이 연결되어 있고 상태는 <span class="mono" aria-label="ARIA live">aria-live</span>로 안내합니다.</li>
-        </ul>
-      </div>
-    </section>
+      <span class="pagecount" id="pageCounter">1 / 3</span>
+      <button id="nextPage">다음 →</button>
+    </div>
+      <button id="nextPage">다음 →</button>
+    </div>
   </main>
 
   <footer class="wrap tiny">
@@ -359,10 +448,116 @@
     a.href = url; a.download = `entropylab_${Date.now()}.png`; a.click();
   });
 
-  // Bootstrap
+  // Pager logic
+  const pages = [
+    document.getElementById('page-cover'),
+    document.getElementById('page-intro'),
+    document.getElementById('page-sim')
+  ];
+  let currentPage = 0;
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const startBtn = document.getElementById('startBtn');
+  const pageCounter = document.getElementById('pageCounter');
+
+  function updateDots(){
+    document.querySelectorAll('.dot').forEach(dot=>{
+      dot.classList.toggle('active', parseInt(dot.dataset.index,10)===currentPage);
+    });
+  }
+  function showPage(i){
+    currentPage = Math.max(0, Math.min(pages.length-1, i));
+    pages.forEach((sec, idx)=>{ sec.classList.toggle('active', idx===currentPage); sec.setAttribute('aria-hidden', idx===currentPage? 'false':'true'); });
+    prevPageBtn.disabled = currentPage===0;
+    nextPageBtn.disabled = currentPage===pages.length-1;
+    if(pageCounter) pageCounter.textContent = (currentPage+1)+' / '+pages.length;
+    updateDots();
+    const ids=['page-cover','page-intro','page-sim'];
+    history.replaceState(null, '', '#'+ids[currentPage]);
+  }
+
+  prevPageBtn.addEventListener('click', ()=> showPage(currentPage-1));
+  nextPageBtn.addEventListener('click', ()=> showPage(currentPage+1));
+  if(startBtn) startBtn.addEventListener('click', ()=> showPage(1));
+  document.querySelectorAll('a[data-goto]').forEach(a=> a.addEventListener('click', (e)=>{
+    const idx=parseInt(a.dataset.goto,10); if(!isNaN(idx)){ e.preventDefault(); showPage(idx); }
+  }));
+  window.addEventListener('keydown', (e)=>{ if(e.key==='ArrowRight') showPage(currentPage+1); else if(e.key==='ArrowLeft') showPage(currentPage-1); });
+  const hashMap = { '#page-cover':0, '#page-intro':1, '#page-sim':2 };
+  const idx0 = hashMap[location.hash] ?? 0;
+
+  // THEME toggle (persist)
+  const themeBtn = document.getElementById('themeToggle');
+  const savedTheme = localStorage.getItem('entropylab-theme');
+  if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
+  if(themeBtn){ themeBtn.addEventListener('click', ()=>{
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = (cur==='light')? 'dark':'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('entropylab-theme', next);
+  }); }
+
+  // MINI DEMO: H(p) chart
+  const pDemo = document.getElementById('pDemo');
+  const pDemoVal = document.getElementById('pDemoVal');
+  const HDemoVal = document.getElementById('HDemoVal');
+  const pDemoReset = document.getElementById('pDemoReset');
+  const chart = document.getElementById('entropyChart');
+  const cctx = chart? chart.getContext('2d') : null;
+
+  function Hbin(p){
+    if(p<=0 || p>=1) return 0;
+    return - (p*Math.log2(p) + (1-p)*Math.log2(1-p));
+  }
+  function drawEntropyChart(){
+    if(!cctx) return;
+    const W = chart.width, H = chart.height;
+    cctx.clearRect(0,0,W,H);
+    // axes
+    cctx.strokeStyle = '#1f2937'; cctx.lineWidth = 1;
+    cctx.beginPath(); cctx.moveTo(40, H-30); cctx.lineTo(W-10, H-30); cctx.stroke();
+    cctx.beginPath(); cctx.moveTo(40, H-30); cctx.lineTo(40, 10); cctx.stroke();
+    // curve H(p)
+    cctx.beginPath();
+    for(let i=0;i<=200;i++){
+      const p = i/200; const h = Hbin(p);
+      const x = 40 + p*(W-60);
+      const y = (H-30) - (h/1.0)*(H-50);
+      if(i===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+    }
+    cctx.strokeStyle = '#22d3ee'; cctx.lineWidth = 2; cctx.stroke();
+    // tick labels
+    cctx.fillStyle = '#94a3b8'; cctx.font = '12px ui-monospace, monospace';
+    cctx.fillText('0', 38, H-12);
+    cctx.fillText('1', W-18, H-12);
+    cctx.fillText('H', 24, 16);
+    // current p marker
+    if(pDemo){
+      const p = parseFloat(pDemo.value);
+      const h = Hbin(p);
+      const x = 40 + p*(W-60);
+      const y = (H-30) - (h/1.0)*(H-50);
+      cctx.beginPath(); cctx.arc(x,y,4,0,Math.PI*2); cctx.fillStyle = '#a78bfa'; cctx.fill();
+    }
+  }
+  function updateDemo(){
+    if(!pDemo) return; const p = parseFloat(pDemo.value);
+    pDemoVal.textContent = p.toFixed(2);
+    HDemoVal.textContent = Hbin(p).toFixed(3);
+    drawEntropyChart();
+  }
+  if(pDemo){
+    pDemo.addEventListener('input', updateDemo);
+    if(pDemoReset){ pDemoReset.addEventListener('click', ()=>{ pDemo.value = 0.5; updateDemo(); }); }
+  }
+
+  // Original bootstrap
   document.getElementById('year').textContent = new Date().getFullYear();
   initParticles();
   draw(0);
+  showPage(idx0);
+  updateDemo();
+
 })();
 </script>
 </body>
