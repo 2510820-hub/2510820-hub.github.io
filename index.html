@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EntropyLab · 엔트로피 시뮬레이션</title>
+  <meta name="description" content="빨간/파란 입자 혼합과 열 이동으로 엔트로피 변화를 직관적으로 시각화하는 웹 시뮬레이터 템플릿.">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" href="favicon.svg">
+  <style>
+    :root{
+      --bg: #0b1020; /* slate-950 */
+      --panel: #0f172a; /* slate-900 */
+      --muted: #94a3b8; /* slate-400 */
+      --text: #e2e8f0; /* slate-200 */
+      --accent: #22d3ee; /* cyan-400 */
+      --accent-2: #a78bfa; /* violet-400 */
+      --danger: #fb7185; /* rose-400 */
+      --ok: #4ade80;    /* green-400 */
+      --grid: #1f2937;  /* slate-800 */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:linear-gradient(180deg, #0a0f1e, #0e1530); color:var(--text);
+      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Noto Sans", Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    header{
+      position:sticky; top:0; z-index:20; background:rgba(11,16,32,.75); backdrop-filter:saturate(160%) blur(10px);
+      border-bottom:1px solid #1f2937;
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:16px}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:700}
+    .logo{width:28px; aspect-ratio:1; border-radius:8px; background:conic-gradient(from 0deg, #ef4444, #3b82f6, #22d3ee, #a78bfa, #ef4444); box-shadow:0 0 16px #22d3ee55 inset}
+    nav{display:flex; gap:14px; margin-left:auto}
+    nav a{color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:8px}
+    nav a:hover{background:#111827; color:var(--text)}
+
+    main{padding:24px 16px}
+    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:18px}
+    @media (max-width: 960px){ .grid{grid-template-columns:1fr} }
+
+    .card{background:linear-gradient(180deg, #0b1120, #0a1226); border:1px solid #111827; border-radius:16px; box-shadow:0 10px 30px 0 rgba(0,0,0,.35)}
+    .card h2{font-size:18px; margin:0 0 8px}
+    .card .inner{padding:16px}
+
+    .sim-wrap{padding:12px}
+    .canvas-frame{position:relative; background:#020617; border:1px solid #111827; border-radius:14px; overflow:hidden}
+    canvas{display:block; width:100%; height:auto; background:repeating-linear-gradient( to bottom, #0b1226, #0b1226 12px, #0a132b 12px, #0a132b 24px)}
+    .statusbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 12px; background:#0b1226; border-top:1px solid #111827}
+    .pill{padding:6px 10px; border:1px solid #1f2937; border-radius:999px; background:#0b1326; color:var(--muted)}
+
+    .controls{display:grid; gap:12px}
+    .control{display:grid; gap:6px}
+    .control label{font-weight:600; color:#cbd5e1}
+    .control .row{display:flex; align-items:center; gap:10px}
+    input[type=range]{width:100%}
+    .kbd{font:12px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco; color:#cbd5e1; background:#0b1226; border:1px solid #1f2937; padding:2px 6px; border-radius:6px}
+
+    .btns{display:flex; flex-wrap:wrap; gap:10px}
+    button{
+      cursor:pointer; border:1px solid #1f2937; background:#0b1226; color:var(--text); padding:10px 12px; border-radius:12px; font-weight:600
+    }
+    button.primary{background:linear-gradient(180deg, #0f172a, #0b1226); border-color:#233045; box-shadow:0 8px 20px rgba(34,211,238,.12)}
+    button:hover{filter:brightness(1.1)}
+    button:disabled{opacity:.5; cursor:not-allowed}
+
+    footer{padding:24px 16px; color:var(--muted)}
+    .muted{color:var(--muted)}
+    .tiny{font-size:12px}
+    .row{display:flex; gap:8px; align-items:center}
+    .grow{flex:1}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+    .success{color:var(--ok)}
+    .danger{color:var(--danger)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap row">
+      <div class="brand"><div class="logo" aria-hidden></div>EntropyLab</div>
+      <nav>
+        <a href="#sim">Simulation</a>
+        <a href="#theory">Theory</a>
+        <a href="#docs">Docs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card" id="sim" aria-label="엔트로피 시뮬레이션">
+      <div class="inner">
+        <h2>엔트로피 혼합 시뮬레이션 <span class="muted tiny">(빨강=Hot, 파랑=Cold)</span></h2>
+        <p class="muted">중앙 막을 열면 두 구획의 입자가 섞이며 혼합도와 엔트로피가 변화합니다. 온도차(=평균 속도차)를 조절해 열 흐름 효과도 볼 수 있어요.</p>
+      </div>
+      <div class="sim-wrap">
+        <div class="canvas-frame">
+          <canvas id="simCanvas" width="900" height="480" aria-label="혼합 시뮬레이션 캔버스"></canvas>
+          <div class="statusbar mono" role="status" aria-live="polite">
+            <span class="pill">t=<span id="t">0.00</span>s</span>
+            <span class="pill">left fraction p=<span id="p">1.00</span></span>
+            <span class="pill">H<sub>norm</sub>=<span id="H">0.00</span></span>
+            <span class="pill">N=<span id="N">300</span></span>
+            <span class="pill">ΔT slider=<span id="dT">1.5</span></span>
+            <span class="pill">barrier=<span id="barrierState" class="success">CLOSED</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="inner">
+        <div class="controls">
+          <div class="control">
+            <label for="count">입자 개수 <span class="muted">(N)</span></label>
+            <div class="row">
+              <input id="count" type="range" min="50" max="800" value="300" step="10">
+              <span class="kbd" id="countLabel">300</span>
+              <button id="resetCount">재생성</button>
+            </div>
+          </div>
+          <div class="control">
+            <label for="tempDiff">온도차 (왼쪽=Hot, 오른쪽=Cold) <span class="muted">평균 속도 스케일</span></label>
+            <div class="row">
+              <input id="tempDiff" type="range" min="0.5" max="3" value="1.5" step="0.1">
+              <span class="kbd" id="tempLabel">1.5</span>
+              <button id="equalize">양쪽 같은 온도</button>
+            </div>
+          </div>
+          <div class="control">
+            <label for="speed">시뮬레이션 속도</label>
+            <div class="row">
+              <input id="speed" type="range" min="0.2" max="2.0" value="1.0" step="0.1">
+              <span class="kbd" id="speedLabel">1.0x</span>
+            </div>
+          </div>
+          <div class="control">
+            <label>막 제어</label>
+            <div class="btns">
+              <button id="toggleBarrier" class="primary">막 열기 / 닫기</button>
+              <button id="mixAll">즉시 혼합</button>
+            </div>
+          </div>
+          <div class="control">
+            <label>재생 제어</label>
+            <div class="btns">
+              <button id="play" class="primary">▶ 시작</button>
+              <button id="pause">⏸ 정지</button>
+              <button id="step">⏭ 한 프레임</button>
+              <button id="reset">↺ 초기화</button>
+              <button id="snapshot">📷 스냅샷 저장</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="theory">
+      <div class="inner">
+        <h2>간단 이론</h2>
+        <p class="muted">여기서는 구획 A(왼쪽)와 B(오른쪽)에 있는 입자 수 비율 p = N<sub>A</sub>/N 으로부터 Shannon 형태의 혼합 엔트로피
+          <span class="mono">H = -[ p ln p + (1-p) ln(1-p) ] / ln 2</span> (0–1 정규화)을 표시합니다. 이는 볼츠만 엔트로피 <span class="mono">S = k_B ln Ω</span>의 직관적 근사로 볼 수 있어요.
+          열 차이는 평균 속도 차로 모사합니다(충돌은 벽/막에 대해 탄성 반사).</p>
+      </div>
+    </section>
+
+    <section class="card" id="docs">
+      <div class="inner">
+        <h2>프로젝트 메모</h2>
+        <ul>
+          <li>GitHub Pages에서 바로 동작하는 단일 <span class="mono">index.html</span> 파일입니다.</li>
+          <li>외부 라이브러리 없이 순수 HTML/CSS/JS로 구현되어 로컬에서도 바로 실행됩니다.</li>
+          <li>엔트로피 정의를 Clausius 형태 (<span class="mono">dS = δQ/T</span>)로 확장하고 싶다면, 격자 온도장과 에너지 교환 모델(입자 속도 재샘플링)을 추가하세요.</li>
+          <li>접근성: 모든 컨트롤에 <span class="mono">label</span>이 연결되어 있고 상태는 <span class="mono" aria-label="ARIA live">aria-live</span>로 안내합니다.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap tiny">
+    <div>© <span id="year"></span> EntropyLab. MIT License.</div>
+  </footer>
+
+<script>
+(()=>{
+  // ====== Utility ======
+  const rnd = (a,b)=> Math.random()*(b-a)+a;
+  const clamp = (v, lo, hi)=> Math.max(lo, Math.min(hi, v));
+  const kB = 1; // 시각화 정규화 용도 (절대 단위 아님)
+
+  // ====== Canvas & State ======
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width; const H = canvas.height; const midX = W/2;
+  let particles = []; // {x,y,vx,vy,r,color,side}
+  let N = 300;
+  let barrierClosed = true;
+  let time = 0;
+  let speedScale = 1.0;
+  let playing = false;
+  let dt = 1/60;
+  const radius = 3.2;
+
+  // Controls
+  const $ = id=> document.getElementById(id);
+  const tEl=$('t'), pEl=$('p'), HEl=$('H'), NEl=$('N'), dTEl=$('dT'), barrierState=$('barrierState');
+  const count=$('count'), tempDiff=$('tempDiff'), speed=$('speed');
+  const countLabel=$('countLabel'), tempLabel=$('tempLabel'), speedLabel=$('speedLabel');
+  const resetCount=$('resetCount'), equalize=$('equalize');
+  const toggleBarrier=$('toggleBarrier'), mixAll=$('mixAll');
+  const playBtn=$('play'), pauseBtn=$('pause'), stepBtn=$('step'), resetBtn=$('reset'), snapshot=$('snapshot');
+
+  // ====== Init ======
+  function initParticles(){
+    particles = [];
+    const hotScale = parseFloat(tempDiff.value); // 왼쪽 평균 속도 배율
+    const coldScale = 1.0;                       // 오른쪽 기준
+    const leftN = Math.floor(N/2), rightN = N-leftN;
+    for(let i=0;i<leftN;i++){
+      particles.push(makeParticle(rnd(radius, midX - radius), rnd(radius, H-radius), hotScale, 'hot'));
+    }
+    for(let i=0;i<rightN;i++){
+      particles.push(makeParticle(rnd(midX+radius, W - radius), rnd(radius, H-radius), coldScale, 'cold'));
+    }
+    updateIndicators();
+    draw(0);
+  }
+
+  function makeParticle(x,y, tempScale, tag){
+    const theta = rnd(0, Math.PI*2);
+    // 맥스웰 근사: 속도 크기 ~ tempScale * (1 + 난수)
+    const base = 60; // 픽셀/초 기준
+    const vmag = base * tempScale * (0.5 + Math.random());
+    return { x, y, vx: vmag*Math.cos(theta), vy: vmag*Math.sin(theta), r: radius, tag };
+  }
+
+  // ====== Physics Step ======
+  function stepOnce(){
+    const sdt = dt * speedScale;
+    // 이동
+    for(const p of particles){
+      p.x += p.vx * sdt;
+      p.y += p.vy * sdt;
+      // 벽 반사
+      if(p.x < p.r){ p.x = p.r; p.vx *= -1; }
+      if(p.x > W - p.r){ p.x = W - p.r; p.vx *= -1; }
+      if(p.y < p.r){ p.y = p.r; p.vy *= -1; }
+      if(p.y > H - p.r){ p.y = H - p.r; p.vy *= -1; }
+      // 중앙 막 충돌 (닫힘일 때만)
+      if(barrierClosed){
+        if(Math.abs(p.x - midX) < p.r){
+          // 막은 바닥부터 천장까지
+          if(p.x < midX){ p.x = midX - p.r; }
+          else { p.x = midX + p.r; }
+          p.vx *= -1;
+        }
+      }
+    }
+    time += sdt;
+  }
+
+  // ====== Entropy (mixing) ======
+  function calcMetrics(){
+    let left=0; for(const p of particles){ if(p.x < midX) left++; }
+    const p = particles.length? left/particles.length : 0;
+    // Shannon 혼합 엔트로피 (0~1)
+    let Hn = 0;
+    if(p>0 && p<1){ Hn = - (p*Math.log2(p) + (1-p)*Math.log2(1-p)); }
+    Hn = Hn / 1; // 이미 log2 기준이므로 최대값=1
+    return {p, Hn};
+  }
+
+  // ====== Render ======
+  function draw(alpha=0){
+    // 배경
+    ctx.clearRect(0,0,W,H);
+    // 구획 배경 살짝 그라데이션
+    const g = ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0, '#0b1226');
+    g.addColorStop(0.5, '#0b1226');
+    g.addColorStop(0.5, '#0a0f20');
+    g.addColorStop(1, '#0a0f20');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+    // 중앙 막
+    if(barrierClosed){
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(midX-2, 0, 4, H);
+    } else {
+      // 점선만
+      ctx.setLineDash([6,6]);
+      ctx.strokeStyle = '#1f2937';
+      ctx.beginPath(); ctx.moveTo(midX,0); ctx.lineTo(midX,H); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 입자
+    for(const p of particles){
+      ctx.beginPath();
+      ctx.fillStyle = (p.tag==='hot')? '#ef4444' : '#3b82f6';
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // 격자 느낌
+    ctx.strokeStyle = '#0f1a33';
+    ctx.lineWidth=1;
+    for(let y=0;y<H;y+=24){ ctx.beginPath(); ctx.moveTo(0,y+.5); ctx.lineTo(W,y+.5); ctx.stroke(); }
+  }
+
+  // ====== UI Wiring ======
+  function updateIndicators(){
+    const {p, Hn} = calcMetrics();
+    tEl.textContent = time.toFixed(2);
+    pEl.textContent = p.toFixed(2);
+    HEl.textContent = Hn.toFixed(3);
+    NEl.textContent = String(N);
+    dTEl.textContent = parseFloat(tempDiff.value).toFixed(1);
+    barrierState.textContent = barrierClosed? 'CLOSED':'OPEN';
+    barrierState.className = barrierClosed? 'success':'danger';
+  }
+
+  let rafId = null;
+  function loop(){
+    stepOnce();
+    draw();
+    updateIndicators();
+    if(playing) rafId = requestAnimationFrame(loop);
+  }
+
+  // Controls: sliders
+  count.addEventListener('input', ()=>{ N = parseInt(count.value,10); countLabel.textContent = String(N); });
+  resetCount.addEventListener('click', ()=>{ initParticles(); });
+
+  tempDiff.addEventListener('input', ()=>{
+    tempLabel.textContent = parseFloat(tempDiff.value).toFixed(1);
+    // 온도차 즉시 반영: 왼쪽 입자들의 평균 속도만 재스케일
+    const hotScale = parseFloat(tempDiff.value);
+    for(const p of particles){ if(p.x < midX){ const s = hotScale; const th = Math.atan2(p.vy,p.vx); const speed = 60 * s * (0.5 + Math.random()); p.vx = speed*Math.cos(th); p.vy = speed*Math.sin(th); p.tag='hot'; } else { p.tag='cold'; } }
+  });
+  equalize.addEventListener('click',()=>{ tempDiff.value = 1.0; tempLabel.textContent = '1.0'; const s=1.0; for(const p of particles){ const th=Math.atan2(p.vy,p.vx); const speed = 60 * s * (0.5 + Math.random()); p.vx=speed*Math.cos(th); p.vy=speed*Math.sin(th); p.tag=(p.x<midX)?'hot':'cold'; } });
+
+  speed.addEventListener('input', ()=>{ speedScale = parseFloat(speed.value); speedLabel.textContent = speedScale.toFixed(1)+'x'; });
+
+  // Barrier & mix
+  toggleBarrier.addEventListener('click', ()=>{ barrierClosed = !barrierClosed; updateIndicators(); });
+  mixAll.addEventListener('click', ()=>{ barrierClosed = false; // 중앙을 열고, 반씩 오른쪽/왼쪽으로 무작위 이동
+    for(const p of particles){ p.x = rnd(radius, W - radius); }
+    updateIndicators();
+  });
+
+  // Play controls
+  playBtn.addEventListener('click', ()=>{ if(!playing){ playing=true; loop(); }});
+  pauseBtn.addEventListener('click', ()=>{ playing=false; cancelAnimationFrame(rafId); });
+  stepBtn.addEventListener('click', ()=>{ playing=false; cancelAnimationFrame(rafId); stepOnce(); draw(); updateIndicators(); });
+  resetBtn.addEventListener('click', ()=>{ playing=false; cancelAnimationFrame(rafId); time=0; barrierClosed=true; initParticles(); updateIndicators(); });
+
+  // Snapshot
+  snapshot.addEventListener('click', ()=>{
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = `entropylab_${Date.now()}.png`; a.click();
+  });
+
+  // Bootstrap
+  document.getElementById('year').textContent = new Date().getFullYear();
+  initParticles();
+  draw(0);
+})();
+</script>
+</body>
+</html>
