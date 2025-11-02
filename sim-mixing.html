@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>입자 분포 시뮬레이션</title>
+  <title>Entropy Mixing Simulator (Red/Blue)</title>
   <style>
-    :root { --bg:#0f1220; --panel:#171a2b; --text:#e6e8ef; --muted:#9aa0b4; --accent:#78a8ff;
-            --red:#ff4d4d; --blue:#4d9bff; --green:#51d19a; --yellow:#ffd166; }
+    :root {
+      --bg: #0f1220; --panel:#171a2b; --text:#e6e8ef; --muted:#9aa0b4; --accent:#78a8ff;
+      --red:#ff4d4d; --blue:#4d9bff; --green:#51d19a; --yellow:#ffd166;
+    }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: var(--bg); color: var(--text); }
     .wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
@@ -34,8 +36,9 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>입자 분포 시뮬레이션</h1>
-    <div class="sub">처음에는 왼쪽에 빨간 입자, 오른쪽에 파란 입자를 두고, 중앙 문을 통해 두 입자가 서로 섞이도록 한다. 이 과정을 통해 조합론적 볼츠만 엔트로피 <b>S = k ln W</b> (여기서는 <b>k=1</b>)와 열의 이동에 따른 엔트로피 변화 <b>∑ΔQ/T</b>를 함께 관찰한다.</div>
+    <div style="margin-bottom:8px"><a href="index.html#page-sim" style="color:#9aa0b4; text-decoration:none; border:1px solid #2a315e; padding:6px 10px; border-radius:8px">← 갤러리로</a></div>
+    <h1>엔트로피 혼합 시뮬레이터 (빨강/파랑, 2칸 모델)</h1>
+    <div class="sub">처음엔 왼쪽에 빨강, 오른쪽에 파랑 입자를 두고 중앙의 작은 문(개구)만 통해 서로 섞입니다. 조합론적 볼츠만 엔트로피 <code>S = k ln W</code> (여기선 <code>k=1</code>)와 열의 이동 기반 엔트로피 <code>\(\sum \Delta Q/T\)</code>를 함께 봅니다.</div>
 
     <div class="grid">
       <div class="card">
@@ -67,6 +70,27 @@
           <div class="small">녹색 선: S(t) / S<sub>max</sub>. 최대는 각 색 입자가 좌/우 반씩일 때입니다.</div>
         </div>
 
+        <div class="card" id="heatCard">
+          <div class="row" style="justify-content:space-between; align-items:flex-start">
+            <div>
+              <div class="small">온도 추정 (k<sub>B</sub>=1, m=1, 2D: ⟨KE⟩=kT ⇒ T=⟨0.5v²⟩)</div>
+              <div class="row">
+                <span class="pill">왼쪽 T<sub>L</sub>: <span id="TL">0.000</span></span>
+                <span class="pill">오른쪽 T<sub>R</sub>: <span id="TR">0.000</span></span>
+              </div>
+            </div>
+            <div>
+              <div class="small">열 엔트로피(누적)</div>
+              <div class="row">
+                <span class="pill">ΔS<sub>Q</sub>: <span id="SQ">0.000</span></span>
+                <span class="pill">Q<sub>L</sub>: <span id="QL">0.000</span></span>
+                <span class="pill">Q<sub>R</sub>: <span id="QR">0.000</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="small" style="margin-top:6px">입자가 문을 통과할 때 운동에너지를 해당 칸으로 전달된 열로 보고 ΔS=Σ(ΔQ/T)로 누적합니다.</div>
+        </div>
+
         <div class="card" id="tempControls">
           <div class="row" style="justify-content:space-between">
             <div class="row">
@@ -80,8 +104,10 @@
               <span class="stat" id="TR0Label">1.0</span>
             </div>
           </div>
-          <!-- '온도 슬라이더 적용' 버튼 제거: 온도 슬라이더 변경 시 즉시 재가열/냉각 -->
-          <div class="small">슬라이더를 바꾸면 현재 각 칸의 속도 분포가 해당 온도로 재스케일됩니다. (리셋 시 초기 조건으로 반영)</div>
+          <div class="row" style="justify-content:flex-end">
+            <button id="applyTemps">온도 슬라이더 적용</button>
+          </div>
+          <div class="small">슬라이더를 바꾸고 "온도 슬라이더 적용"을 누르면 현재 각 칸의 속도 분포를 해당 목표 온도로 <b>재가열/냉각(스케일링)</b> 합니다. 리셋 시에도 슬라이더 값이 초기 조건으로 반영됩니다.</div>
         </div>
 
         <div class="card">
@@ -108,102 +134,179 @@
               <span class="stat" id="gwLabel">8px</span>
             </div>
           </div>
-          <div class="small" style="margin-top:6px">문이 작을수록(개구율↓) 확산이 느려져 엔트로피 증가가 천천히 진행됩니다.</div>
+          <div class="small" style="margin-top:6px">문이 작을수록(개구율↓) 확산이 느려집니다 → 엔트로피 증가가 천천히 진행됩니다.</div>
         </div>
       </div>
     </div>
   </div>
 
 <script>
-(()=>{
-function buildLogFact(maxN){const lf=new Float64Array(maxN+1); lf[0]=0; for(let i=1;i<=maxN;i++) lf[i]=lf[i-1]+Math.log(i); return lf;}
-function lnChoose(n,k,lf){if(k<0||k>n) return -Infinity; return lf[n]-lf[k]-lf[n-k];}
-function randn(){let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+(() => {
+  function buildLogFact(maxN) { const lf = new Float64Array(maxN+1); lf[0]=0; for(let i=1;i<=maxN;i++) lf[i]=lf[i-1]+Math.log(i); return lf; }
+  function lnChoose(n,k,lf){ if(k<0||k>n) return -Infinity; return lf[n]-lf[k]-lf[n-k]; }
+  function randn(){ let u=0, v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
 
-const sim=document.getElementById('sim'), ctx=sim.getContext('2d');
-const chart=document.getElementById('chart'), cctx=chart.getContext('2d');
-const W=sim.width, H=sim.height, midX=W/2, radius=3.2;
-let gatePct=40, gateWidth=8, speedScale=1.3, NperColor=80, running=true;
-const rL=document.getElementById('rLeft'), rR=document.getElementById('rRight'), bL=document.getElementById('bLeft'), bR=document.getElementById('bRight'), Sspan=document.getElementById('Snow'), meter=document.getElementById('meter');
-const TL0Input=document.getElementById('TL0Input'), TR0Input=document.getElementById('TR0Input');
-const TL0Label=document.getElementById('TL0Label'), TR0Label=document.getElementById('TR0Label');
-const nInput=document.getElementById('nInput'), vInput=document.getElementById('vInput'), gInput=document.getElementById('gInput'), gwInput=document.getElementById('gwInput');
-const nLabel=document.getElementById('nLabel'), gwLabel=document.getElementById('gwLabel');
+  const sim = document.getElementById('sim');
+  const ctx = sim.getContext('2d');
+  const chart = document.getElementById('chart');
+  const cctx = chart.getContext('2d');
 
-document.getElementById('toggle').onclick=()=>{ running=!running; };
-document.getElementById('reset').onclick=resetAll;
-nInput.oninput=(e)=>{ NperColor=+e.target.value; nLabel.textContent=NperColor; resetAll(); }
-vInput.oninput=(e)=>{ speedScale=+e.target.value; document.getElementById('vLabel').textContent=speedScale.toFixed(1); }
-gInput.oninput=(e)=>{ gatePct=+e.target.value; document.getElementById('gatePerc').textContent=gatePct; }
-gwInput.oninput=(e)=>{ gateWidth=+e.target.value; gwLabel.textContent=gateWidth+"px"; }
-TL0Input.oninput=()=>{ TL0Label.textContent=(+TL0Input.value).toFixed(1); rethermalize('L', +TL0Input.value); };
-TR0Input.oninput=()=>{ TR0Label.textContent=(+TR0Input.value).toFixed(1); rethermalize('R', +TR0Input.value); };
+  const W = sim.width, H = sim.height; const midX = W/2;
+  let gatePct = 40; let gateWidth = 8; const radius = 3.2;
+  let speedScale = 1.3; let NperColor = 80; let running = true;
 
-let particles=[], logFact=buildLogFact(20000), maxLogW=0, QL=0, QR=0, SQ=0, history=[], t=0, last=performance.now();
-function makeParticle(isRed){
-  let x,y; if(isRed){ x=Math.random()*(midX-2*radius)+radius; } else { x=Math.random()*(midX-2*radius)+midX+radius; }
-  y=Math.random()*(H-2*radius)+radius; let vx=randn(), vy=randn(); return {x,y,vx,vy, red:isRed};}
-function rethermalize(side, T){const left=(side==='L'); let c=0,sum=0;
-  for(const p of particles){const L=p.x<midX; if((left&&L)||(!left&&!isLeft)){}
+  const rL = document.getElementById('rLeft'); const rR = document.getElementById('rRight');
+  const bL = document.getElementById('bLeft'); const bR = document.getElementById('bRight');
+  const Sspan = document.getElementById('Snow'); const meter = document.getElementById('meter');
+  const gatePercSpan = document.getElementById('gatePerc'); const gwLabel = document.getElementById('gwLabel');
+
+  const TLspan = document.getElementById('TL'); const TRspan = document.getElementById('TR');
+  const SQspan = document.getElementById('SQ'); const QLspan = document.getElementById('QL'); const QRspan = document.getElementById('QR');
+
+  const TL0Input = document.getElementById('TL0Input'); const TR0Input = document.getElementById('TR0Input');
+  const TL0Label = document.getElementById('TL0Label'); const TR0Label = document.getElementById('TR0Label');
+  const applyTempsBtn = document.getElementById('applyTemps');
+
+  const nInput = document.getElementById('nInput'); const vInput = document.getElementById('vInput');
+  const gInput = document.getElementById('gInput'); const gwInput = document.getElementById('gwInput');
+  const nLabel = document.getElementById('nLabel');
+
+  document.getElementById('toggle').onclick = () => { running=!running; }
+  document.getElementById('reset').onclick = resetAll;
+  nInput.oninput = (e)=>{ NperColor = +e.target.value; nLabel.textContent = NperColor; resetAll(); }
+  vInput.oninput = (e)=>{ speedScale = +e.target.value; document.getElementById('vLabel').textContent = speedScale.toFixed(1); }
+  gInput.oninput = (e)=>{ gatePct = +e.target.value; gatePercSpan.textContent = gatePct; }
+  gwInput.oninput = (e)=>{ gateWidth = +e.target.value; gwLabel.textContent = gateWidth+"px"; }
+  TL0Input.oninput = ()=>{ TL0Label.textContent = (+TL0Input.value).toFixed(1); };
+  TR0Input.oninput = ()=>{ TR0Label.textContent = (+TR0Input.value).toFixed(1); };
+  applyTempsBtn.onclick = ()=>{ rethermalize('L', +TL0Input.value); rethermalize('R', +TR0Input.value); };
+
+  let particles = [];
+  let logFact = buildLogFact(20000);
+  let maxLogW = 0; const kB = 1;
+  let QL = 0, QR = 0, SQ = 0;
+
+  function initParticles() {
+    particles = [];
+    for(let i=0;i<NperColor;i++) particles.push(makeParticle(true));
+    for(let i=0;i<NperColor;i++) particles.push(makeParticle(false));
+    const lnWmaxRed = lnChoose(NperColor, Math.floor(NperColor/2), logFact);
+    const lnWmaxBlue = lnChoose(NperColor, Math.floor(NperColor/2), logFact);
+    maxLogW = lnWmaxRed + lnWmaxBlue;
+    history = []; t = 0; QL = 0; QR = 0; SQ = 0;
+    rethermalize('L', +TL0Input.value);
+    rethermalize('R', +TR0Input.value);
   }
-  for(const p of particles){const L=p.x<midX; if((left&&L)||(!left&&!L)){ c++; sum+=0.5*(p.vx*p.vx+p.vy*p.vy);}}
-  if(!c) return; let Tc=sum/c; const s=Math.sqrt(Math.max(1e-9, T/Tc));
-  for(const p of particles){const L=p.x<midX; if((left&&L)||(!left&&!L)){ p.vx*=s; p.vy*=s; }}
-}
-function initParticles(){
-  particles=[]; for(let i=0;i<NperColor;i++) particles.push(makeParticle(true)); for(let i=0;i<NperColor;i++) particles.push(makeParticle(false));
-  const lnWmaxRed=lnChoose(NperColor, Math.floor(NperColor/2), logFact);
-  const lnWmaxBlue=lnChoose(NperColor, Math.floor(NperColor/2), logFact);
-  maxLogW=lnWmaxRed+lnWmaxBlue; history=[]; t=0; QL=0; QR=0; SQ=0;
-  rethermalize('L', +TL0Input.value); rethermalize('R', +TR0Input.value);
-}
-function entropyNow(){
-  let rLcount=0, bLcount=0; for(const p of particles){ const left=p.x<midX; if(left){ if(p.red) rLcount++; else bLcount++; } }
-  const lnW=lnChoose(NperColor, rLcount, logFact) + lnChoose(NperColor, bLcount, logFact);
-  const S=lnW, Smax=maxLogW, Snorm=Math.max(0,Math.min(1,S/Smax));
-  rL.textContent=rLcount; rR.textContent=(NperColor-rLcount); bL.textContent=bLcount; bR.textContent=(NperColor-bLcount);
-  Sspan.textContent=Snorm.toFixed(3); meter.style.width=(Snorm*100).toFixed(1)+"%"; return Snorm;
-}
-function step(dt){
-  const openHalf=(gatePct/100)*(H/2), gateTop=H/2-openHalf, gateBot=H/2+openHalf, halfW=gateWidth/2;
-  for(const p of particles){
-    const prevLeft=p.x<midX; p.x+=p.vx*speedScale*dt; p.y+=p.vy*speedScale*dt;
-    if(p.y<radius){ p.y=radius; p.vy*=-1; } else if(p.y>H-radius){ p.y=H-radius; p.vy*=-1; }
-    if(p.x<radius){ p.x=radius; p.vx*=-1; } else if(p.x>W-radius){ p.x=W-radius; p.vx*=-1; }
-    const near=Math.abs(p.x-midX)<= (halfW+radius), gate=(p.y>=gateTop && p.y<=gateBot);
-    if(near && !gate){ if(p.x<midX){ p.x=midX-(halfW+radius); } else { p.x=midX+(halfW+radius); } p.vx*=-1; }
-    const nowLeft=p.x<midX; if(gate && (prevLeft!==nowLeft)){
-      const KE=0.5*(p.vx*p.vx+p.vy*p.vy); if(prevLeft && !nowLeft){ QL-=KE; QR+=KE; } else if(!prevLeft && nowLeft){ QR-=KE; QL+=KE; }
+
+  function makeParticle(isRed){
+    let x, y;
+    if(isRed) { x = Math.random()*(midX - 2*radius) + radius; } else { x = Math.random()*(midX - 2*radius) + midX + radius; }
+    y = Math.random()*(H - 2*radius) + radius;
+    let vx = randn(), vy = randn();
+    return {x,y,vx,vy, red:isRed};
+  }
+
+  function rethermalize(side, Ttarget){
+    const leftSide = (side==='L');
+    let count=0, sumKE=0;
+    for(const p of particles){
+      const isLeft = p.x < midX;
+      if((leftSide && isLeft) || (!leftSide && !isLeft)){
+        count++; sumKE += 0.5*(p.vx*p.vx + p.vy*p.vy);
+      }
+    }
+    if(count===0) return;
+    let Tcurr = sumKE / count; if(!isFinite(Tcurr) || Tcurr<=0) Tcurr = 1e-6;
+    const s = Math.sqrt(Ttarget / Tcurr);
+    for(const p of particles){
+      const isLeft = p.x < midX;
+      if((leftSide && isLeft) || (!leftSide && !isLeft)){
+        p.vx *= s; p.vy *= s;
+      }
     }
   }
-}
-function draw(){
-  ctx.clearRect(0,0,W,H); ctx.fillStyle='#0b0e1a'; ctx.fillRect(0,0,W,H);
-  const openHalf=(gatePct/100)*(H/2), gateTop=H/2-openHalf, gateBot=H/2+openHalf; const halfW=gateWidth/2;
-  ctx.fillStyle='#263055'; ctx.fillRect(midX-halfW,0,gateWidth,gateTop); ctx.fillRect(midX-halfW,gateBot,gateWidth,H-gateBot);
-  const grad=ctx.createLinearGradient(midX-8,0,midX+8,0); grad.addColorStop(0,'rgba(120,168,255,0)'); grad.addColorStop(0.5,'rgba(120,168,255,0.22)'); grad.addColorStop(1,'rgba(120,168,255,0)'); ctx.fillStyle=grad; ctx.fillRect(midX-12,gateTop,24,gateBot-gateTop);
-  for(const p of particles){ ctx.beginPath(); ctx.arc(p.x,p.y, radius, 0, 2*Math.PI); ctx.fillStyle = p.red ? 'rgba(255,77,77,0.95)' : 'rgba(77,155,255,0.95)'; ctx.fill(); }
-}
-let history=[], t=0, last=performance.now();
-function drawChart(){
-  const padding=28, w=chart.width, h=chart.height; cctx.clearRect(0,0,w,h);
-  cctx.strokeStyle='#32406f'; cctx.lineWidth=1; cctx.beginPath(); cctx.moveTo(padding, h - padding); cctx.lineTo(w - padding, h - padding); cctx.moveTo(padding, h - padding); cctx.lineTo(padding, padding); cctx.stroke();
-  if(history.length<2) return;
-  const tMin=history[0][0], tMax=history[history.length-1][0];
-  const xFor=(tt)=> padding + (tt - tMin) / Math.max(1e-6, (tMax - tMin)) * (w - 2*padding);
-  const yFor=(s)=> (h - padding) - s*(h - 2*padding);
-  cctx.lineWidth=2; cctx.strokeStyle='#51d19a'; cctx.beginPath(); cctx.moveTo(xFor(history[0][0]), yFor(history[0][1])); for(const [tt, ss] of history){ cctx.lineTo(xFor(tt), yFor(ss)); } cctx.stroke();
-  cctx.fillStyle='#9aa0b4'; cctx.font='12px ui-sans-serif'; cctx.fillText('S(t) / Smax', padding, padding-8);
-}
-function loop(now){
-  const dt=Math.min(0.033,(now-last)/16); last=now; if(running){ step(dt); }
-  const s=entropyNow(); if(history.length===0 || (t - history[history.length-1][0])>0.05){ history.push([t,s]); if(history.length>1200) history.shift(); }
-  draw(); drawChart(); if(running) t += dt*0.016*60; requestAnimationFrame(loop);
-}
-function resetAll(){ initParticles(); const s=entropyNow(); history=[[0,s]]; draw(); drawChart(); }
-document.getElementById('TL0Label').textContent=(+TL0Input.value).toFixed(1);
-document.getElementById('TR0Label').textContent=(+TR0Input.value).toFixed(1);
-resetAll(); requestAnimationFrame(loop);
+
+  function entropyNow(){
+    let rLcount=0, bLcount=0, leftCount=0, rightCount=0, sumKEL=0, sumKER=0;
+    for(const p of particles){
+      const left = (p.x < midX);
+      const KE = 0.5*(p.vx*p.vx + p.vy*p.vy);
+      if(left){ leftCount++; sumKEL += KE; if(p.red) rLcount++; else bLcount++; }
+      else { rightCount++; sumKER += KE; }
+    }
+    const rRcount = NperColor - rLcount; const bRcount = NperColor - bLcount;
+    rL.textContent = rLcount; rR.textContent = rRcount; bL.textContent = bLcount; bR.textContent = bRcount;
+
+    const lnW = lnChoose(NperColor, rLcount, logFact) + lnChoose(NperColor, bLcount, logFact);
+    const S = kB * lnW; const Smax = kB * maxLogW;
+    const Snorm = Math.max(0, Math.min(1, S / Smax));
+    Sspan.textContent = Snorm.toFixed(3); meter.style.width = (Snorm*100).toFixed(1)+"%";
+
+    const TL = leftCount>0 ? (sumKEL/leftCount) : 0; const TR = rightCount>0 ? (sumKER/rightCount) : 0;
+    TLspan.textContent = TL.toFixed(3); TRspan.textContent = TR.toFixed(3);
+    SQspan.textContent = SQ.toFixed(3); QLspan.textContent = QL.toFixed(3); QRspan.textContent = QR.toFixed(3);
+
+    return Snorm;
+  }
+
+  function step(dt){
+    const openHalf = (gatePct/100) * (H/2); const gateTop = H/2 - openHalf, gateBot = H/2 + openHalf;
+    for(const p of particles){
+      const prevLeft = (p.x < midX);
+      p.x += p.vx * speedScale * dt; p.y += p.vy * speedScale * dt;
+      if(p.y < radius){ p.y = radius; p.vy *= -1; }
+      else if(p.y > H - radius) { p.y = H - radius; p.vy *= -1; }
+      if(p.x < radius){ p.x = radius; p.vx *= -1; }
+      else if(p.x > W - radius){ p.x = W - radius; p.vx *= -1; }
+      const nearWall = Math.abs(p.x - midX) <= (gateWidth/2 + radius);
+      const withinGate = (p.y >= gateTop && p.y <= gateBot);
+      if(nearWall){
+        if(!withinGate){
+          if(p.x < midX) { p.x = midX - (gateWidth/2 + radius); }
+          else { p.x = midX + (gateWidth/2 + radius); }
+          p.vx *= -1;
+        }
+      }
+      const nowLeft = (p.x < midX);
+      if(withinGate && (prevLeft !== nowLeft)){
+        const KE = 0.5*(p.vx*p.vx + p.vy*p.vy);
+        let lCount=0,rCount=0,sumL=0,sumR=0;
+        for(const q of particles){ const left = (q.x < midX); const ke = 0.5*(q.vx*q.vx + q.vy*q.vy); if(left){ lCount++; sumL+=ke; } else { rCount++; sumR+=ke; } }
+        const TL = lCount? (sumL/lCount) : 1e-6; const TR = rCount? (sumR/rCount) : 1e-6;
+        if(prevLeft && !nowLeft){ QL -= KE; QR += KE; SQ += (-KE)/TL + (KE)/TR; }
+        else if(!prevLeft && nowLeft){ QR -= KE; QL += KE; SQ += (-KE)/TR + (KE)/TL; }
+      }
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H); ctx.fillStyle = '#0b0e1a'; ctx.fillRect(0,0,W,H);
+    const openHalf = (gatePct/100) * (H/2); const gateTop = H/2 - openHalf, gateBot = H/2 + openHalf;
+    ctx.fillStyle = '#263055'; ctx.fillRect(midX - gateWidth/2, 0, gateWidth, gateTop); ctx.fillRect(midX - gateWidth/2, gateBot, gateWidth, H-gateBot);
+    const grad = ctx.createLinearGradient(midX-8, 0, midX+8, 0); grad.addColorStop(0, 'rgba(120,168,255,0)'); grad.addColorStop(0.5, 'rgba(120,168,255,0.22)'); grad.addColorStop(1, 'rgba(120,168,255,0)'); ctx.fillStyle = grad; ctx.fillRect(midX-12, gateTop, 24, gateBot-gateTop);
+    for(const p of particles){ ctx.beginPath(); ctx.arc(p.x, p.y, radius, 0, 2*Math.PI); ctx.fillStyle = p.red ? 'rgba(255,77,77,0.95)' : 'rgba(77,155,255,0.95)'; ctx.fill(); }
+  }
+
+  let history = []; let t = 0;
+  function drawChart(){
+    const padding = 28; const w = chart.width, h = chart.height; cctx.clearRect(0,0,w,h);
+    cctx.strokeStyle = '#32406f'; cctx.lineWidth = 1; cctx.beginPath(); cctx.moveTo(padding, h - padding); cctx.lineTo(w - padding, h - padding); cctx.moveTo(padding, h - padding); cctx.lineTo(padding, padding); cctx.stroke();
+    cctx.fillStyle = '#9aa0b4'; cctx.font = '12px ui-sans-serif';
+    for(const v of [0,0.5,1]){ const y = (h - padding) - v*(h - 2*padding); cctx.fillText(v.toFixed(1), 6, y+4); cctx.strokeStyle = 'rgba(154,160,180,0.12)'; cctx.beginPath(); cctx.moveTo(padding, y); cctx.lineTo(w - padding, y); cctx.stroke(); }
+    if(history.length<2) return; const tMin = history[0][0]; const tMax = history[history.length-1][0];
+    const xFor = (tt)=> padding + (tt - tMin) / Math.max(1e-6, (tMax - tMin)) * (w - 2*padding); const yFor = (s)=> (h - padding) - s*(h - 2*padding);
+    cctx.lineWidth = 2; cctx.strokeStyle = '#51d19a'; cctx.beginPath(); cctx.moveTo(xFor(history[0][0]), yFor(history[0][1])); for(const [tt, ss] of history){ cctx.lineTo(xFor(tt), yFor(ss)); } cctx.stroke();
+  }
+
+  let last= performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now-last)/16); last = now; if(running){ step(dt); }
+    const s = entropyNow(); if(history.length===0 || (t - history[history.length-1][0])>0.05){ history.push([t, s]); if(history.length>1200) history.shift(); }
+    draw(); drawChart(); if(running) t += dt*0.016*60; requestAnimationFrame(loop);
+  }
+
+  function resetAll(){ initParticles(); }
+  resetAll(); requestAnimationFrame(loop);
 })();
 </script>
 </body>
