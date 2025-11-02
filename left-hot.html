@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>에너지 분포 시뮬레이션</title>
+  <style>
+    :root { --bg:#0f1220; --panel:#171a2b; --text:#e6e8ef; --muted:#9aa0b4; --accent:#78a8ff;
+            --red:#ef4444; --blue:#3b82f6; --purple:#a855f7; --yellow:#ffd166; --green:#51d19a; }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:var(--bg); color:var(--text)}
+    .wrap{max-width:1100px; margin:24px auto; padding:0 16px}
+    h1{font-size:20px; margin:0 0 8px; letter-spacing:.2px}
+    .sub{color:var(--muted); margin-bottom:16px}
+    .grid{display:grid; grid-template-columns:1.25fr .75fr; gap:16px}
+    .card{background:var(--panel); border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .row>*{margin:4px 0}
+    label{font-size:12px; color:var(--muted)}
+    input[type=range]{width:180px}
+    button{background:#222742; color:var(--text); border:1px solid #30365c; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    button:hover{background:#283059}
+    .pill{padding:6px 10px; border-radius:999px; background:#1e2444; border:1px solid #2a315e; font-size:12px}
+    .legend{display:flex; align-items:center; gap:8px}
+    .dot{width:10px; height:10px; border-radius:50%; display:inline-block}
+    .stat{font-variant-numeric:tabular-nums; font-weight:600}
+    canvas{display:block; width:100%; height:auto; border-radius:12px; background:#0b0e1a}
+    .small{font-size:12px; color:var(--muted)}
+    .side{display:grid; grid-template-rows:auto auto auto 1fr; gap:12px}
+    .meterWrap{background:#0b0e1a; border:1px solid #283059; border-radius:12px; height:10px; overflow:hidden}
+    .meterBar{height:100%; width:0%; background:linear-gradient(90deg, var(--green), var(--yellow))}
+    .sep{height:1px; background:#2a315e; margin:12px 0}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>에너지 분포 시뮬레이션</h1>
+  <div class="sub">두 구획의 입자들이 중앙의 문을 통해 섞이며 에너지가 퍼져 평균 에너지가 같아지고, 색은 <b>뜨거움=빨강</b>, <b>차가움=파랑</b>, <b>중간=보라</b>로 표시되며 평형에서 보라색으로 수렴하고 엔트로피가 최대가 된다.</div>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="sim" width="900" height="420"></canvas>
+      <div class="row" style="justify-content:space-between; margin-top:10px">
+        <div class="row">
+          <span class="legend"><span class="dot" style="background:var(--red)"></span>왼쪽 빨강: <span id="rLeft" class="stat">0</span>L / <span id="rRight" class="stat">0</span>R</span>
+          <span class="legend" style="margin-left:12px"><span class="dot" style="background:var(--blue)"></span>오른쪽 파랑: <span id="bLeft" class="stat">0</span>L / <span id="bRight" class="stat">0</span>R</span>
+          <span class="pill">문 높이: <span id="gatePerc">40</span>%</span>
+        </div>
+        <div class="row">
+          <button id="toggle">⏯︎ 일시정지</button>
+          <button id="reset">🔄 리셋</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:flex-start">
+          <div>
+            <div class="small">엔트로피 S(t) / S<sub>max</sub> (값만 표시)</div>
+            <div class="meterWrap"><div id="meter" class="meterBar"></div></div>
+          </div>
+          <div class="stat">S: <span id="Snow">0.000</span></div>
+        </div>
+        <div class="sep"></div>
+        <div class="row" style="justify-content:space-between">
+          <div class="row">
+            <span class="pill">T<sub>L</sub>: <span id="TL">0.000</span></span>
+            <span class="pill">T<sub>R</sub>: <span id="TR">0.000</span></span>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <canvas id="chart" width="480" height="230"></canvas>
+        <div class="small">그래프: 시간에 따른 <b>평균 에너지</b> (왼쪽=빨강 선, 오른쪽=파랑 선). 색상 앵커: <b>T=0.2→파랑, T=6.0→빨강</b>. 두 선이 만나고 S가 최대에 가까워지면 평형.</div>
+      </div>
+
+      <div class="card" id="controls">
+        <div class="row" style="justify-content:space-between">
+          <div class="row">
+            <label>왼쪽 초기 온도 T<sub>L0</sub></label>
+            <input id="TL0Input" type="range" min="0.2" max="6.0" step="0.1" value="6.0" />
+            <span class="stat" id="TL0Label">6.0</span>
+          </div>
+          <div class="row">
+            <label>오른쪽 초기 온도 T<sub>R0</sub></label>
+            <input id="TR0Input" type="range" min="0.2" max="6.0" step="0.1" value="0.2" />
+            <span class="stat" id="TR0Label">0.2</span>
+          </div>
+        </div>
+        <!-- 온도 슬라이더 적용 버튼 제거됨 -->
+        <div class="sep"></div>
+        <div class="row" style="justify-content:space-between">
+          <div class="row">
+            <label>입자(각 색)</label>
+            <input id="nInput" type="range" min="20" max="200" step="10" value="80" />
+            <span class="stat" id="nLabel">80</span>
+          </div>
+          <div class="row">
+            <label>속도 배율</label>
+            <input id="vInput" type="range" min="0.4" max="3.0" step="0.1" value="1.3" />
+            <span class="stat" id="vLabel">1.3</span>
+          </div>
+        </div>
+        <div class="row" style="justify-content:space-between; margin-top:8px">
+          <div class="row">
+            <label>문 높이(%)</label>
+            <input id="gInput" type="range" min="0" max="100" step="5" value="40" />
+            <span class="stat" id="gateLabel">40%</span>
+          </div>
+          <div class="row">
+            <label>문 폭</label>
+            <input id="gwInput" type="range" min="4" max="20" step="1" value="8" />
+            <span class="stat" id="gwLabel">8px</span>
+          </div>
+        </div>
+        <div class="small" style="margin-top:6px">문이 작을수록(개구율↓) 확산이 느려집니다 → 엔트로피 증가가 천천히 진행됩니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+function buildLogFact(maxN){const lf=new Float64Array(maxN+1); lf[0]=0; for(let i=1;i<=maxN;i++) lf[i]=lf[i-1]+Math.log(i); return lf;}
+function lnChoose(n,k,lf){if(k<0||k>n) return -Infinity; return lf[n]-lf[k]-lf[n-k];}
+const sim=document.getElementById('sim'), ctx=sim.getContext('2d');
+const chart=document.getElementById('chart'), cctx=chart.getContext('2d');
+const W=sim.width, H=sim.height, midX=W/2, radius=3.2;
+const TLspan=document.getElementById('TL'), TRspan=document.getElementById('TR'), Sspan=document.getElementById('Snow'), meter=document.getElementById('meter');
+const rL=document.getElementById('rLeft'), rR=document.getElementById('rRight'), bL=document.getElementById('bLeft'), bR=document.getElementById('bRight');
+const TL0Input=document.getElementById('TL0Input'), TR0Input=document.getElementById('TR0Input');
+const nInput=document.getElementById('nInput'), vInput=document.getElementById('vInput'), gInput=document.getElementById('gInput'), gwInput=document.getElementById('gwInput');
+const nLabel=document.getElementById('nLabel'), gateLabel=document.getElementById('gateLabel'), gwLabel=document.getElementById('gwLabel');
+document.getElementById('toggle').onclick=()=>{ running=!running; };
+document.getElementById('reset').onclick=resetAll;
+nInput.oninput=(e)=>{ NperColor=+e.target.value; nLabel.textContent=NperColor; resetAll(); }
+vInput.oninput=(e)=>{ speedScale=+e.target.value; document.getElementById('vLabel').textContent=speedScale.toFixed(1); }
+gInput.oninput=(e)=>{ gatePct=+e.target.value; document.getElementById('gatePerc').textContent=gatePct; gateLabel.textContent=gatePct+'%'; }
+gwInput.oninput=(e)=>{ gateWidth=+e.target.value; gwLabel.textContent=gateWidth+'px'; }
+TL0Input.oninput=()=>{ document.getElementById('TL0Label').textContent=(+TL0Input.value).toFixed(1); rethermalize('L', +TL0Input.value); };
+TR0Input.oninput=()=>{ document.getElementById('TR0Label').textContent=(+TR0Input.value).toFixed(1); rethermalize('R', +TR0Input.value); };
+
+let gatePct=40, gateWidth=8, speedScale=1.3, NperColor=80, running=true;
+let particles=[], logFact=buildLogFact(20000), maxLogW=0, QL=0, QR=0, SQ=0, history=[], t=0, last=performance.now();
+
+function randn(){let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function makeParticle(isRed){
+  let x,y; if(isRed){ x=Math.random()*(midX-2*radius)+radius; } else { x=Math.random()*(midX-2*radius)+midX+radius; }
+  y=Math.random()*(H-2*radius)+radius; let vx=randn(), vy=randn(); return {x,y,vx,vy, red:isRed};}
+function rethermalize(side, T){const left=(side==='L'); let c=0,sum=0;
+  for(const p of particles){const L=p.x<midX; if((left&&L)||(!left&&!L)){ c++; sum+=0.5*(p.vx*p.vx+p.vy*p.vy);}} if(!c) return; let Tc=sum/c; const s=Math.sqrt(Math.max(1e-9, T/Tc));
+  for(const p of particles){const L=p.x<midX; if((left&&L)||(!left&&!L)){ p.vx*=s; p.vy*=s; }}
+}
+function initParticles(){
+  particles=[]; for(let i=0;i<NperColor;i++) particles.push(makeParticle(true)); for(let i=0;i<NperColor;i++) particles.push(makeParticle(false));
+  const lnWmaxRed=lnChoose(NperColor, Math.floor(NperColor/2), logFact);
+  const lnWmaxBlue=lnChoose(NperColor, Math.floor(NperColor/2), logFact);
+  maxLogW=lnWmaxRed+lnWmaxBlue; history=[]; t=0; QL=0; QR=0; SQ=0;
+  rethermalize('L', +TL0Input.value); rethermalize('R', +TR0Input.value);
+}
+function entropyNow(){
+  let rLcount=0, bLcount=0, leftCount=0, rightCount=0, sumKEL=0, sumKER=0;
+  for(const p of particles){ const left=p.x<midX; const KE=0.5*(p.vx*p.vx+p.vy*p.vy);
+    if(left){ leftCount++; sumKEL+=KE; if(p.red) rLcount++; else bLcount++; } else { rightCount++; sumKER+=KE; }}
+  const rRcount=NperColor-rLcount, bRcount=NperColor-bLcount;
+  rL.textContent=rLcount; rR.textContent=rRcount; bL.textContent=bLcount; bR.textContent=bRcount;
+  const lnW=lnChoose(NperColor, rLcount, logFact) + lnChoose(NperColor, bLcount, logFact);
+  const S=lnW, Smax=maxLogW, Snorm=Math.max(0,Math.min(1,S/Smax));
+  Sspan.textContent=Snorm.toFixed(3); meter.style.width=(Snorm*100).toFixed(1)+"%";
+  return Snorm;
+}
+function step(dt){
+  const openHalf=(gatePct/100)*(H/2), gateTop=H/2-openHalf, gateBot=H/2+openHalf, halfW=gateWidth/2;
+  for(const p of particles){
+    const prevLeft=p.x<midX; p.x+=p.vx*speedScale*dt; p.y+=p.vy*speedScale*dt;
+    if(p.y<radius){ p.y=radius; p.vy*=-1; } else if(p.y>H-radius){ p.y=H-radius; p.vy*=-1; }
+    if(p.x<radius){ p.x=radius; p.vx*=-1; } else if(p.x>W-radius){ p.x=W-radius; p.vx*=-1; }
+    const near=Math.abs(p.x-midX)<= (halfW+radius), gate=(p.y>=gateTop && p.y<=gateBot);
+    if(near && !gate){ if(p.x<midX){ p.x=midX-(halfW+radius); } else { p.x=midX+(halfW+radius); } p.vx*=-1; }
+    const nowLeft=p.x<midX; if(gate && (prevLeft!==nowLeft)){
+      const KE=0.5*(p.vx*p.vx+p.vy*p.vy);
+      if(prevLeft && !nowLeft){ QL-=KE; QR+=KE; } else if(!prevLeft && nowLeft){ QR-=KE; QL+=KE; }
+    }
+  }
+}
+function draw(){
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#0b0e1a'; ctx.fillRect(0,0,W,H);
+  const openHalf=(gatePct/100)*(H/2), gateTop=H/2-openHalf, gateBot=H/2+openHalf; const halfW=gateWidth/2;
+  ctx.fillStyle='#263055'; ctx.fillRect(midX-halfW,0,gateWidth,gateTop); ctx.fillRect(midX-halfW,gateBot,gateWidth,H-gateBot);
+  const grad=ctx.createLinearGradient(midX-8,0,midX+8,0); grad.addColorStop(0,'rgba(120,168,255,0)'); grad.addColorStop(0.5,'rgba(120,168,255,0.22)'); grad.addColorStop(1,'rgba(120,168,255,0)'); ctx.fillStyle=grad; ctx.fillRect(midX-12,gateTop,24,gateBot-gateTop);
+  for(const p of particles){ ctx.beginPath(); ctx.arc(p.x,p.y, radius, 0, 2*Math.PI); ctx.fillStyle = p.red ? 'rgba(255,77,77,0.95)' : 'rgba(77,155,255,0.95)'; ctx.fill(); }
+}
+let history=[], t=0, last=performance.now();
+function drawChart(){
+  const padding=28, w=chart.width, h=chart.height; cctx.clearRect(0,0,w,h);
+  cctx.strokeStyle='#32406f'; cctx.lineWidth=1; cctx.beginPath(); cctx.moveTo(padding, h - padding); cctx.lineTo(w - padding, h - padding); cctx.moveTo(padding, h - padding); cctx.lineTo(padding, padding); cctx.stroke();
+  if(history.length<2) return;
+  const tMin=history[0][0], tMax=history[history.length-1][0];
+  const xFor=(tt)=> padding + (tt - tMin) / Math.max(1e-6, (tMax - tMin)) * (w - 2*padding);
+  const yFor=(s)=> (h - padding) - s*(h - 2*padding);
+  cctx.lineWidth=2; cctx.strokeStyle='#51d19a'; cctx.beginPath(); cctx.moveTo(xFor(history[0][0]), yFor(history[0][1])); for(const [tt, ss] of history){ cctx.lineTo(xFor(tt), yFor(ss)); } cctx.stroke();
+  cctx.fillStyle='#9aa0b4'; cctx.font='12px ui-sans-serif'; cctx.fillText('S(t) / Smax', padding, padding-8);
+}
+function loop(now){
+  const dt=Math.min(0.033,(now-last)/16); last=now; if(running){ step(dt); }
+  const s=entropyNow(); if(history.length===0 || (t - history[history.length-1][0])>0.05){ history.push([t,s]); if(history.length>1200) history.shift(); }
+  draw(); drawChart(); if(running) t += dt*0.016*60; requestAnimationFrame(loop);
+}
+function resetAll(){ initParticles(); const s=entropyNow(); history=[[0,s]]; draw(); drawChart(); }
+document.getElementById('TL0Label').textContent=(+TL0Input.value).toFixed(1);
+document.getElementById('TR0Label').textContent=(+TR0Input.value).toFixed(1);
+resetAll(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
