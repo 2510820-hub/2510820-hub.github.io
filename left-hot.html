@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Entropy Mixing Simulator — Left Hot → Equilibrium</title>
+  <title>에너지 분포 시뮬레이션</title>
   <style>
     :root {
       --bg:#0f1220; --panel:#171a2b; --text:#e6e8ef; --muted:#9aa0b4; --accent:#78a8ff;
@@ -18,8 +18,6 @@
     .card{background:var(--panel); border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
     .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
     .row>*{margin:4px 0}
-    label{font-size:12px; color:var(--muted)}
-    input[type=range]{width:180px}
     button{background:#222742; color:var(--text); border:1px solid #30365c; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
     button:hover{background:#283059}
     .pill{padding:6px 10px; border-radius:999px; background:#1e2444; border:1px solid #2a315e; font-size:12px}
@@ -28,23 +26,17 @@
     .stat{font-variant-numeric:tabular-nums; font-weight:600}
     canvas{display:block; width:100%; height:auto; border-radius:12px; background:#0b0e1a}
     .small{font-size:12px; color:var(--muted)}
-    .side{display:grid; grid-template-rows:auto auto auto 1fr; gap:12px}
+    .side{display:grid; grid-template-rows:auto auto 1fr; gap:12px}
     .meterWrap{background:#0b0e1a; border:1px solid #283059; border-radius:12px; height:10px; overflow:hidden}
     .meterBar{height:100%; width:0%; background:linear-gradient(90deg, var(--green), var(--yellow))}
     .sep{height:1px; background:#2a315e; margin:12px 0}
-    .badge{padding:6px 10px; border-radius:10px; background:#183a2b; border:1px solid #2c6b4c; color:#88f3c0; font-weight:700}
-    .topnav{display:flex; gap:10px; margin-bottom:10px}
-    .topnav a{color:#9aa0b4; text-decoration:none; padding:6px 10px; border:1px solid #2a315e; border-radius:8px}
-    .topnav a:hover{color:#e6e8ef; background:#1e2444}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="topnav">
-    <a href="index.html#page-sim">← 갤러리로</a>
-  </div>
-  <h1>엔트로피 혼합 시뮬레이터 (왼쪽 고에너지 → 평형)</h1>
-  <div class="sub">초기엔 <b>왼쪽(A)</b>에 에너지를 집중(뜨거움, 빨강)하고 <b>오른쪽(B)</b>은 거의 에너지가 없게 설정(차가움, 파랑). 시간이 지나며 문을 통해 섞이면서 평균 에너지가 균일해지고, <b>엔트로피 S</b>는 상승해 최대치에서 평형 상태를 보입니다. (k<sub>B</sub>=1, m=1, 2D: T≈⟨0.5v²⟩)</div>
+  <div style="margin-bottom:8px"><a href="index.html#page-sim" style="color:#9aa0b4; text-decoration:none; border:1px solid #2a315e; padding:6px 10px; border-radius:8px">← 갤러리로</a></div>
+  <h1>에너지 분포 시뮬레이션</h1>
+  <div class="sub">두 구획의 입자들이 중앙의 문을 통해 섞이며 에너지가 퍼져 평균 에너지가 같아지고, 색은 뜨거움=빨강, 차가움=파랑, 중간=보라로 표시되며 평형에서 보라색으로 수렴하고 엔트로피가 최대가 된다.</div>
 
   <div class="grid">
     <div class="card">
@@ -77,31 +69,13 @@
             <span class="pill">T<sub>L</sub>: <span id="TL">0.000</span></span>
             <span class="pill">T<sub>R</sub>: <span id="TR">0.000</span></span>
           </div>
-          <div class="row" id="eqBadgeWrap" style="display:none"><span class="badge">평형: S 최대 & 평균에너지 균등</span></div>
         </div>
         <div class="sep"></div>
         <canvas id="chart" width="480" height="230"></canvas>
-        <div class="small">그래프: 시간에 따른 <b>평균 에너지</b> (왼쪽=빨강 선, 오른쪽=파랑 선). 색상 매핑은 <b>T=0.2→파랑, T=6.0→빨강</b> 고정 앵커를 사용합니다. 두 선이 만나고 S가 최대에 가까워지면 평형.</div>
+        <div class="small">그래프: 시간에 따른 <b>평균 에너지</b> (왼쪽=빨강 선, 오른쪽=파랑 선). 두 선이 만나고 S가 최대에 가까워지면 평형.</div>
       </div>
 
-      <div class="card" id="controls">
-        <div class="row" style="justify-content:space-between">
-          <div class="row">
-            <label>왼쪽 초기 온도 T<sub>L0</sub></label>
-            <input id="TL0Input" type="range" min="0.2" max="6.0" step="0.1" value="6.0" />
-            <span class="stat" id="TL0Label">6.0</span>
-          </div>
-          <div class="row">
-            <label>오른쪽 초기 온도 T<sub>R0</sub></label>
-            <input id="TR0Input" type="range" min="0.2" max="6.0" step="0.1" value="0.2" />
-            <span class="stat" id="TR0Label">0.2</span>
-          </div>
-        </div>
-        <div class="row" style="justify-content:flex-end">
-          <button id="applyTemps">온도 슬라이더 적용</button>
-        </div>
-        <div class="small">슬라이더 적용 시 각 칸의 속도 분포를 목표 온도로 재가열/냉각합니다. 리셋 시에도 초기 조건으로 반영됩니다.</div>
-        <div class="sep"></div>
+      <div class="card">
         <div class="row" style="justify-content:space-between">
           <div class="row">
             <label>입자(각 색)</label>
@@ -136,30 +110,23 @@
 (() => {
   function buildLogFact(maxN){const lf=new Float64Array(maxN+1); lf[0]=0; for(let i=1;i<=maxN;i++) lf[i]=lf[i-1]+Math.log(i); return lf;}
   function lnChoose(n,k,lf){if(k<0||k>n) return -Infinity; return lf[n]-lf[k]-lf[n-k];}
-  function randn(){let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);} // Box-Muller
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 
-  const mustGet=(id)=>{ const el=document.getElementById(id); if(!el){ console.error(`[FATAL] Missing element #${id}`); } return el; };
-
-  const sim=mustGet('sim'); const ctx=sim.getContext('2d');
-  const chart=mustGet('chart'); const cctx=chart.getContext('2d');
+  const sim=document.getElementById('sim'); const ctx=sim.getContext('2d');
+  const chart=document.getElementById('chart'); const cctx=chart.getContext('2d');
   const W=sim.width, H=sim.height, midX=W/2; const radius=3.2;
 
-  const TLspan=mustGet('TL'); const TRspan=mustGet('TR');
-  const Sspan=mustGet('Snow'); const meter=mustGet('meter');
-  const eqBadgeWrap=mustGet('eqBadgeWrap');
-  const rL=mustGet('rLeft'), rR=mustGet('rRight');
-  const bL=mustGet('bLeft'), bR=mustGet('bRight');
+  const TLspan=document.getElementById('TL'); const TRspan=document.getElementById('TR');
+  const Sspan=document.getElementById('Snow'); const meter=document.getElementById('meter');
+  const rL=document.getElementById('rLeft'), rR=document.getElementById('rRight');
+  const bL=document.getElementById('bLeft'), bR=document.getElementById('bRight');
 
-  const TL0Input=mustGet('TL0Input'), TR0Input=mustGet('TR0Input');
-  const TL0Label=mustGet('TL0Label'), TR0Label=mustGet('TR0Label');
-  const applyTempsBtn=mustGet('applyTemps');
-  const nInput=mustGet('nInput'), vInput=mustGet('vInput');
-  const gInput=mustGet('gInput'), gwInput=mustGet('gwInput');
-  const nLabel=mustGet('nLabel');
-  const gateLabel=mustGet('gateLabel'); const gwLabel=mustGet('gwLabel');
+  const nInput=document.getElementById('nInput'), vInput=document.getElementById('vInput');
+  const gInput=document.getElementById('gInput'), gwInput=document.getElementById('gwInput');
+  const nLabel=document.getElementById('nLabel');
+  const gateLabel=document.getElementById('gateLabel'); const gwLabel=document.getElementById('gwLabel');
 
-  const toggleBtn=mustGet('toggle'); const resetBtn=mustGet('reset');
+  const toggleBtn=document.getElementById('toggle'); const resetBtn=document.getElementById('reset');
 
   toggleBtn.addEventListener('click', ()=>{ running=!running; });
   resetBtn.addEventListener('click', resetAll);
@@ -167,54 +134,28 @@
   vInput.addEventListener('input', (e)=>{ speedScale=+e.target.value; document.getElementById('vLabel').textContent=speedScale.toFixed(1); });
   gInput.addEventListener('input', (e)=>{ gatePct=+e.target.value; document.getElementById('gatePerc').textContent=gatePct; gateLabel.textContent=gatePct+'%'; });
   gwInput.addEventListener('input', (e)=>{ gateWidth=+e.target.value; gwLabel.textContent=gateWidth+'px'; });
-  TL0Input.addEventListener('input', ()=>{ TL0Label.textContent=(+TL0Input.value).toFixed(1); });
-  TR0Input.addEventListener('input', ()=>{ TR0Label.textContent=(+TR0Input.value).toFixed(1); });
-  applyTempsBtn.addEventListener('click', ()=>{ rethermalize('L', +TL0Input.value); rethermalize('R', +TR0Input.value); });
 
   let gatePct=40, gateWidth=8, speedScale=1.3, NperColor=80, running=true;
-  let particles=[]; let logFact=buildLogFact(20000); let maxLogW=0; let eq=false;
+  let particles=[]; let logFact=buildLogFact(20000); let maxLogW=0;
   let history=[]; let t=0; let last=performance.now();
-
-  let QL=0, QR=0;
 
   function makeParticle(isRed){
     let x,y; if(isRed){ x=Math.random()*(midX-2*radius)+radius; } else { x=Math.random()*(midX-2*radius)+midX+radius; }
     y=Math.random()*(H-2*radius)+radius;
-    let vx=0, vy=0; return {x,y,vx,vy,red:isRed};
+    // left hot, right cold fixed anchors (T=6.0 vs 0.2)
+    const vMag = (isRed ? Math.sqrt(2*6.0) : Math.sqrt(2*0.2));
+    const th=Math.random()*Math.PI*2;
+    const vx=vMag*Math.cos(th), vy=vMag*Math.sin(th);
+    return {x,y,vx,vy,red:isRed};
   }
 
   function initParticles(){
     particles=[];
-    const TL0 = +TL0Input.value;
-    const TR0 = +TR0Input.value;
-    const vHot  = Math.sqrt(Math.max(1e-9, 2*TL0));
-    const vCold = Math.sqrt(Math.max(1e-9, 2*TR0));
-
-    for(let i=0;i<NperColor;i++){
-      const p = makeParticle(true);
-      const th = Math.random()*Math.PI*2;
-      p.vx = vHot*Math.cos(th);
-      p.vy = vHot*Math.sin(th);
-      particles.push(p);
-    }
-    for(let i=0;i<NperColor;i++){
-      const p = makeParticle(false);
-      const th = Math.random()*Math.PI*2;
-      p.vx = vCold*Math.cos(th);
-      p.vy = vCold*Math.sin(th);
-      particles.push(p);
-    }
-
+    for(let i=0;i<NperColor;i++) particles.push(makeParticle(true));
+    for(let i=0;i<NperColor;i++) particles.push(makeParticle(false));
     const lnWmaxRed=lnChoose(NperColor, Math.floor(NperColor/2), logFact);
     const lnWmaxBlue=lnChoose(NperColor, Math.floor(NperColor/2), logFact);
-    maxLogW=lnWmaxRed+lnWmaxBlue; history=[]; t=0; QL=0; QR=0; eq=false;
-  }
-
-  function rethermalize(side, Ttarget){
-    const leftSide=(side==='L'); let count=0, sumKE=0;
-    for(const p of particles){ const isLeft=p.x<midX; if((leftSide&&isLeft)||(!leftSide&&!isLeft)){ count++; sumKE+=0.5*(p.vx*p.vx+p.vy*p.vy); } }
-    if(count===0) return; let Tcurr=sumKE/count; if(!isFinite(Tcurr)||Tcurr<=0) Tcurr=1e-6; const s=Math.sqrt(Ttarget/Tcurr);
-    for(const p of particles){ const isLeft=p.x<midX; if((leftSide&&isLeft)||(!leftSide&&!isLeft)){ p.vx*=s; p.vy*=s; } }
+    maxLogW=lnWmaxRed+lnWmaxBlue; history=[]; t=0;
   }
 
   function measure(){
@@ -237,67 +178,35 @@
   function step(dt){
     const openHalf=(gatePct/100)*(H/2); const gateTop=H/2-openHalf, gateBot=H/2+openHalf; const halfW=gateWidth/2;
     for(const p of particles){
-      const prevLeft=p.x<midX; p.x+=p.vx*speedScale*dt; p.y+=p.vy*speedScale*dt;
+      p.x+=p.vx*speedScale*dt; p.y+=p.vy*speedScale*dt;
       if(p.y<radius){ p.y=radius; p.vy*=-1; }
       else if(p.y>H-radius){ p.y=H-radius; p.vy*=-1; }
       if(p.x<radius){ p.x=radius; p.vx*=-1; }
       else if(p.x>W-radius){ p.x=W-radius; p.vx*=-1; }
       const nearWall=Math.abs(p.x-midX)<= (halfW+radius); const withinGate=(p.y>=gateTop && p.y<=gateBot);
       if(nearWall && !withinGate){ if(p.x<midX){ p.x=midX-(halfW+radius); } else { p.x=midX+(halfW+radius); } p.vx*=-1; }
-      const nowLeft=p.x<midX;
-      if(withinGate && (prevLeft!==nowLeft)){
-        const KE=0.5*(p.vx*p.vx+p.vy*p.vy);
-        if(prevLeft && !nowLeft){ QL-=KE; QR+=KE; } else if(!prevLeft && nowLeft){ QR-=KE; QL+=KE; }
-      }
     }
-
-    const tryCollide=(a,b)=>{
-      const dx=b.x-a.x, dy=b.y-a.y; const d2=dx*dx+dy*dy; const rr=(2.2*radius)*(2.2*radius);
-      if(d2>rr) return; const d=Math.sqrt(Math.max(1e-9,d2)); const nx=dx/d, ny=dy/d;
-      const dvx=a.vx-b.vx, dvy=a.vy-b.vy; const vn=dvx*nx + dvy*ny; if(vn>0) return;
-      a.vx -= vn*nx; a.vy -= vn*ny; b.vx += vn*nx; b.vy += vn*ny;
-    };
-    const leftIdx=[], rightIdx=[];
-    for(let i=0;i<particles.length;i++){ (particles[i].x<midX ? leftIdx : rightIdx).push(i); }
-    const doSide=(arr)=>{
-      const attempts=Math.min(arr.length*2, 200);
-      for(let k=0;k<attempts;k++){
-        const i=arr[(Math.random()*arr.length)|0]; let j=i; while(j===i){ j=arr[(Math.random()*arr.length)|0]; }
-        tryCollide(particles[i], particles[j]);
-      }
-    };
-    doSide(leftIdx); doSide(rightIdx);
   }
 
   const BLUE=[59,130,246], RED=[239,68,68];
   const T_BLUE=0.2, T_RED=6.0;
   const lerp=(a,b,u)=>Math.round(a+(b-a)*u);
   const mixRGB=(u)=>`rgb(${lerp(BLUE[0],RED[0],u)},${lerp(BLUE[1],RED[1],u)},${lerp(BLUE[2],RED[2],u)})`;
-  function keToU(KE){
-    let t=(KE - T_BLUE)/Math.max(1e-9, (T_RED - T_BLUE));
-    t = Math.max(0, Math.min(1, t));
-    return Math.pow(t, 0.9);
-  }
-  function tintedU(u, TL, TR){
-    const delta=Math.abs(TL-TR);
-    const contrast=Math.max(0, Math.min(1, delta/Math.max(1e-9, (T_RED-T_BLUE))));
-    return 0.5 + (u-0.5)*contrast;
-  }
-  function colorForKE_RB(KE){ return mixRGB(keToU(KE)); }
+  function keToU(KE){ let t=(KE - T_BLUE)/Math.max(1e-9, (T_RED - T_BLUE)); t = Math.max(0, Math.min(1, t)); return Math.pow(t, 0.9); }
+  function tintedU(u, TL, TR){ const delta=Math.abs(TL-TR); const contrast=Math.max(0, Math.min(1, delta/Math.max(1e-9, (T_RED-T_BLUE)))); return 0.5 + (u-0.5)*contrast; }
 
   function draw(TL, TR){
-    const ctxLocal=ctx;
-    ctxLocal.clearRect(0,0,W,H); ctxLocal.fillStyle='#0b0e1a'; ctxLocal.fillRect(0,0,W,H);
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#0b0e1a'; ctx.fillRect(0,0,W,H);
     const openHalf=(gatePct/100)*(H/2); const gateTop=H/2-openHalf, gateBot=H/2+openHalf; const halfW=gateWidth/2;
-    ctxLocal.fillStyle='#263055'; ctxLocal.fillRect(midX-halfW, 0, gateWidth, gateTop); ctxLocal.fillRect(midX-halfW, gateBot, gateWidth, H-gateBot);
-    const grad=ctxLocal.createLinearGradient(midX-8,0,midX+8,0); grad.addColorStop(0,'rgba(120,168,255,0)'); grad.addColorStop(0.5,'rgba(120,168,255,0.22)'); grad.addColorStop(1,'rgba(120,168,255,0)'); ctxLocal.fillStyle=grad; ctxLocal.fillRect(midX-12, gateTop, 24, gateBot-gateTop);
+    ctx.fillStyle='#263055'; ctx.fillRect(midX-halfW, 0, gateWidth, gateTop); ctx.fillRect(midX-halfW, gateBot, gateWidth, H-gateBot);
+    const grad=ctx.createLinearGradient(midX-8,0,midX+8,0); grad.addColorStop(0,'rgba(120,168,255,0)'); grad.addColorStop(0.5,'rgba(120,168,255,0.22)'); grad.addColorStop(1,'rgba(120,168,255,0)'); ctx.fillStyle=grad; ctx.fillRect(midX-12, gateTop, 24, gateBot-gateTop);
     for(const p of particles){
       const KE=0.5*(p.vx*p.vx+p.vy*p.vy);
       const uRaw = keToU(KE);
       const uTint = tintedU(uRaw, TL, TR);
-      ctxLocal.beginPath(); ctxLocal.arc(p.x,p.y, radius, 0, 2*Math.PI);
-      ctxLocal.fillStyle = mixRGB(uTint);
-      ctxLocal.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y, radius, 0, 2*Math.PI);
+      ctx.fillStyle = mixRGB(uTint);
+      ctx.fill();
     }
   }
 
@@ -322,8 +231,6 @@
     const dt=Math.min(0.033,(now-last)/16); last=now; if(running) step(dt);
     const {Snorm, TL, TR}=measure();
     if(history.length===0 || (t-history[history.length-1][0])>0.05){ history.push([t, TL, TR]); if(history.length>1200) history.shift(); }
-    eq = (Snorm>0.995) && (Math.abs(TL-TR) < 0.03 * ((TL+TR)/2 + 1e-6));
-    eqBadgeWrap.style.display = eq ? 'block':'none';
     draw(TL, TR); drawChart(); if(running) t += dt*0.016*60; requestAnimationFrame(loop);
   }
 
@@ -335,28 +242,9 @@
     drawChart();
   }
 
-  function runSelfTests(){
-    try {
-      console.assert(typeof lnChoose(4,2,buildLogFact(10))==='number', 'lnChoose should return number');
-      ['sim','chart','TL','TR','Snow','meter','eqBadgeWrap','rLeft','rRight','bLeft','bRight','TL0Input','TR0Input','TL0Label','TR0Label','applyTemps','nInput','vInput','gInput','gwInput','nLabel','gateLabel','gwLabel','toggle','reset'].forEach(id=>{
-        const ok=!!document.getElementById(id); console.assert(ok, `#${id} should exist`);
-      });
-      const BLUE_EXPECT='rgb(59,130,246)'; const RED_EXPECT='rgb(239,68,68)';
-      console.assert(colorForKE_RB(0.2)===BLUE_EXPECT, 'KE=0.2 → BLUE');
-      console.assert(colorForKE_RB(6.0)===RED_EXPECT, 'KE=6.0 → RED');
-      initParticles();
-      let leftKEs=[], rightKEs=[]; for(const p of particles){ const KE=0.5*(p.vx*p.vx+p.vy*p.vy); if(p.x<midX) leftKEs.push(KE); else rightKEs.push(KE); }
-      const maxL=Math.max(...leftKEs), minL=Math.min(...leftKEs), maxR=Math.max(...rightKEs), minR=Math.min(...rightKEs);
-      console.assert(maxL-minL < 1e-9, 'Left energies identical at t=0');
-      console.assert(maxR-minR < 1e-9, 'Right energies identical at t=0');
-      for(let s=0;s<50;s++){ step(0.016); }
-    } catch(e){ console.error('[Self-tests] Failure', e); }
-  }
-
-  TL0Label.textContent=(+TL0Input.value).toFixed(1); TR0Label.textContent=(+TR0Input.value).toFixed(1);
-  document.getElementById('gatePerc').textContent=gatePct; gateLabel.textContent=gatePct+'%'; gwLabel.textContent=gateWidth+'px';
+  let gatePct=40, gateWidth=8, speedScale=1.3, NperColor=80, running=true;
+  let logFact=buildLogFact(20000), maxLogW=0, particles=[], history=[], t=0, last=performance.now();
   resetAll();
-  runSelfTests();
   requestAnimationFrame(loop);
 })();
 </script>

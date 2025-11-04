@@ -5,13 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EntropyLab — 시뮬레이터 갤러리</title>
   <style>
+    /* Cover image variable: place an image at assets/entropy-cover.jpg to override */
+    :root { --cover:url('assets/entropy-cover.jpg'); }
+    .coverHero{
+      position:relative; overflow:hidden; border-radius:16px;
+      min-height: 360px; display:flex; align-items:flex-end; padding:28px;
+      background-image: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55)), var(--cover);
+      background-size: cover; background-position: center;
+      border:1px solid #111827;
+    }
+    .coverHero .titleXL{
+      font-size: clamp(42px, 6vw + 10px, 96px);
+      line-height: 1.02; margin:0 0 6px; font-weight: 900; letter-spacing:.4px;
+      text-shadow: 0 6px 24px rgba(0,0,0,.45);
+    }
+    .coverHero .subtitle{
+      font-size: clamp(16px, 1.2vw + 12px, 22px);
+      color:#cbd5e1; max-width: 900px; text-shadow: 0 6px 24px rgba(0,0,0,.45);
+    }
     :root { --bg:#0b1020; --panel:#0f172a; --text:#e2e8f0; --muted:#94a3b8; --accent:#22d3ee; --card:#111b33;
             --red:#ef4444; --blue:#3b82f6; --hot:#ef4444; --cold:#60a5fa; --gate:#7aa2ff44; }
     *{ box-sizing:border-box; }
     body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg,#0a0f1e,#0e1530); color:var(--text); }
     header{ position:sticky; top:0; background:rgba(11,16,32,.7); backdrop-filter: blur(10px); border-bottom:1px solid #1f2937; z-index:10; }
     .wrap{ max-width:1100px; margin:0 auto; padding:14px 16px; }
-    .brand{ font-weight:800; letter-spacing:.2px; }
+    .brand{ font-weight:800; letter-spacing:.2px; font-size:40px; }
     nav{ display:flex; gap:12px; flex-wrap:wrap; margin-left:auto; }
     nav a{ color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:8px; }
     nav a:hover{ background:#111827; color:var(--text); }
@@ -19,12 +37,12 @@
     .card{ background:linear-gradient(180deg,#0b1120,#0a1226); border:1px solid #111827; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); margin-bottom:16px; }
     .inner{ padding:16px; }
     h1,h2{ margin:0 0 8px; }
-    .muted{ color:var(--muted); }
+    .hero{ font-size:18px; color:var(--muted); }
     .row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 
     /* Gallery */
     .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
-    .tile{ background:var(--card); border:1px solid #18243f; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
+    .tile{ background:var(--card); border:1px solid #18243f; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; }
     .thumb{ aspect-ratio: 16/9; background:#0b1120; display:flex; align-items:center; justify-content:center; }
     .tile h3{ font-size:18px; margin:12px 12px 4px; }
     .tile p{ color:var(--muted); margin:0 12px 12px; font-size:14px; line-height:1.4 }
@@ -32,12 +50,10 @@
     .tile a{ flex:1; text-align:center; text-decoration:none; border:1px solid #1f2937; background:#0b1226; color:#e2e8f0; padding:10px 12px; border-radius:12px; font-weight:700 }
     .tile a:hover{ background:#111b33 }
     .tile a.primary{ background:linear-gradient(180deg,#0f172a,#0b1226); border-color:#233045; }
-    .badge{ position:absolute; top:10px; left:10px; font-size:12px; padding:4px 8px; border-radius:999px; background:#1d2a4a; color:#93c5fd; border:1px solid #2a3d66; }
 
     /* Pages */
     .page{ display:none; }
     .page.active{ display:block; }
-    .hero{ font-size:18px; color:var(--muted); }
   </style>
 </head>
 <body>
@@ -55,14 +71,16 @@
   <main class="wrap">
     <!-- Cover -->
     <section class="card page" id="page-cover">
-      <div class="inner">
-        <h1>EntropyLab</h1>
-        <p class="hero">입자들의 미시 상태 변화를 실시간으로 관찰하며, 엔트로피를 시각적으로 분석하는 학습 도구입니다.</p>
-        <div class="row">
-          <a class="tile a primary" href="#page-sim" data-goto="2" style="text-decoration:none; padding:10px 14px; border-radius:12px; border:1px solid #233045; background:linear-gradient(180deg,#0f172a,#0b1226); font-weight:800">시뮬레이터로 이동 →</a>
+      <div class="coverHero">
+        <div>
+          <h1 class="titleXL">EntropyLab</h1>
+          <p class="subtitle">입자들의 미시 상태 변화를 실시간으로 관찰하며, 엔트로피를 시각적으로 분석하는 학습 도구입니다.</p>
+          <div class="row" style="margin-top:14px">
+            <a class="tile a primary" href="#page-sim" data-goto="2" style="text-decoration:none; padding:12px 18px; border-radius:12px; border:1px solid #233045; background:linear-gradient(180deg,#0f172a,#0b1226); font-weight:800">시뮬레이터로 이동 →</a>
+          </div>
         </div>
       </div>
-    </section>
+</section>
 
     <!-- Intro -->
     <section class="card page" id="page-intro">
@@ -86,10 +104,8 @@
         <h2>시뮬레이터</h2>
         <p class="muted">원하는 시뮬레이터 카드를 클릭해 들어가세요.</p>
         <div class="grid">
-          <!-- Tile 1: Particle Mixing -->
-          <div class="tile">
+          <div class="tile" data-href="sim-mixing.html">
             <div class="thumb">
-              <!-- Inline SVG thumbnail: red/blue particles mixing through a gate -->
               <svg viewBox="0 0 640 360" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <radialGradient id="bg" cx="50%" cy="50%" r="70%">
@@ -98,11 +114,8 @@
                   </radialGradient>
                 </defs>
                 <rect width="640" height="360" fill="url(#bg)"/>
-                <!-- divider wall -->
                 <rect x="316" y="0" width="8" height="360" fill="#263055"/>
-                <!-- gate glow -->
                 <rect x="308" y="120" width="24" height="120" fill="#7aa2ff33"/>
-                <!-- red particles (left) -->
                 <g fill="#ef4444">
                   <circle cx="90" cy="60" r="6"/>
                   <circle cx="150" cy="120" r="6"/>
@@ -111,7 +124,6 @@
                   <circle cx="120" cy="260" r="6"/>
                   <circle cx="260" cy="300" r="6"/>
                 </g>
-                <!-- blue particles (right) -->
                 <g fill="#3b82f6">
                   <circle cx="360" cy="60" r="6"/>
                   <circle cx="430" cy="100" r="6"/>
@@ -120,13 +132,6 @@
                   <circle cx="470" cy="260" r="6"/>
                   <circle cx="380" cy="300" r="6"/>
                 </g>
-                <!-- arrows through gate -->
-                <polyline points="300,180 320,180 340,180" stroke="#93c5fd" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
-                <defs>
-                  <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
-                    <polygon points="0 0, 10 3, 0 6" fill="#93c5fd"/>
-                  </marker>
-                </defs>
               </svg>
             </div>
             <h3>입자 분포 시뮬레이션</h3>
@@ -134,10 +139,8 @@
             <div class="cta"><a class="primary" href="sim-mixing.html">열기</a></div>
           </div>
 
-          <!-- Tile 2: Left Hot -> Equilibrium -->
-          <div class="tile">
+          <div class="tile" data-href="left-hot.html">
             <div class="thumb">
-              <!-- Inline SVG thumbnail: hot-to-cold gradient, particles hue-shift -->
               <svg viewBox="0 0 640 360" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="temp" x1="0" x2="1" y1="0" y2="0">
@@ -146,10 +149,8 @@
                   </linearGradient>
                 </defs>
                 <rect width="640" height="360" fill="url(#temp)"/>
-                <!-- divider wall with gate -->
                 <rect x="316" y="0" width="8" height="360" fill="#1f2937" opacity="0.7"/>
                 <rect x="308" y="120" width="24" height="120" fill="#ffffff22"/>
-                <!-- particles -->
                 <g>
                   <circle cx="120" cy="70" r="6" fill="#ff6b6b"/>
                   <circle cx="200" cy="140" r="6" fill="#ff6b6b"/>
@@ -170,7 +171,6 @@
   </main>
 
   <script>
-    // SPA navigation: make nav links actually switch sections
     const sections = [
       document.getElementById('page-cover'),
       document.getElementById('page-intro'),
@@ -184,18 +184,23 @@
       const map = { '#page-cover':0, '#page-intro':1, '#page-sim':2 };
       showPageByIndex(map[h] ?? 0);
     }
-    // handle top nav and any element with [data-goto]
     document.body.addEventListener('click', (e)=>{
       const a = e.target.closest('a[data-goto]');
-      if(!a) return;
-      const idx = parseInt(a.dataset.goto,10);
-      e.preventDefault();
-      const ids = ['#page-cover','#page-intro','#page-sim'];
-      history.replaceState(null, '', ids[idx] || '#page-cover');
-      showPageByIndex(idx || 0);
+      if(a){
+        const idx = parseInt(a.dataset.goto,10);
+        e.preventDefault();
+        const ids = ['#page-cover','#page-intro','#page-sim'];
+        history.replaceState(null, '', ids[idx] || '#page-cover');
+        showPageByIndex(idx || 0);
+        return;
+      }
+      const tile = e.target.closest('.tile[data-href]');
+      if(tile){
+        const href = tile.getAttribute('data-href');
+        if(href){ window.location.href = href; }
+      }
     });
     window.addEventListener('hashchange', ()=> showPageByHash(location.hash));
-    // initial
     showPageByHash(location.hash || '#page-cover');
   </script>
 </body>
