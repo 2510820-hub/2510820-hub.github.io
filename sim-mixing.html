@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>입자 분포 시뮬레이션</title>
+  <title>Entropy Mixing Simulator (Red/Blue)</title>
   <style>
     :root {
       --bg: #0f1220; --panel:#171a2b; --text:#e6e8ef; --muted:#9aa0b4; --accent:#78a8ff;
@@ -18,6 +18,8 @@
     .card { background: var(--panel); border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
     .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
     .row > * { margin: 4px 0; }
+    label { font-size: 12px; color: var(--muted); }
+    input[type=range] { width: 180px; }
     button { background: #222742; color: var(--text); border: 1px solid #30365c; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600; }
     button:hover { background: #283059; }
     .pill { padding: 6px 10px; border-radius: 999px; background: #1e2444; border:1px solid #2a315e; font-size: 12px; }
@@ -26,7 +28,7 @@
     .stat { font-variant-numeric: tabular-nums; font-weight:600; }
     canvas { display:block; width:100%; height:auto; border-radius: 12px; background: #0b0e1a; }
     .small { font-size: 12px; color: var(--muted); }
-    .side { display: grid; grid-template-rows: auto auto 1fr; gap: 12px; }
+    .side { display: grid; grid-template-rows: auto auto auto auto 1fr; gap: 12px; }
     .meterWrap { background:#0b0e1a; border:1px solid #283059; border-radius:12px; height: 10px; overflow:hidden; }
     .meterBar { height:100%; width:0%; background: linear-gradient(90deg, var(--green), var(--yellow)); }
     .sep { height:1px; background:#2a315e; margin:12px 0; }
@@ -35,8 +37,8 @@
 <body>
   <div class="wrap">
     <div style="margin-bottom:8px"><a href="index.html#page-sim" style="color:#9aa0b4; text-decoration:none; border:1px solid #2a315e; padding:6px 10px; border-radius:8px">← 갤러리로</a></div>
-    <h1>입자 분포 시뮬레이션</h1>
-    <div class="sub">처음에는 왼쪽에 빨간 입자, 오른쪽에 파란 입자를 두고, 중앙 문을 통해 두 입자가 서로 섞이도록 한다. 이 과정을 통해 조합론적 볼츠만 엔트로피 𝑆=𝑘ln𝑊 (여기서는 𝑘=1)와 열의 이동에 따른 엔트로피 변화 ∑Δ𝑄/𝑇를 함께 관찰한다.</div>
+    <h1>엔트로피 혼합 시뮬레이터 (빨강/파랑, 2칸 모델)</h1>
+    <div class="sub">처음엔 왼쪽에 빨강, 오른쪽에 파랑 입자를 두고 중앙의 작은 문(개구)만 통해 서로 섞입니다. 조합론적 볼츠만 엔트로피 <code>S = k ln W</code> (여기선 <code>k=1</code>)와 열의 이동 기반 엔트로피 <code>\(\sum \Delta Q/T\)</code>를 함께 봅니다.</div>
 
     <div class="grid">
       <div class="card">
@@ -87,6 +89,25 @@
             </div>
           </div>
           <div class="small" style="margin-top:6px">입자가 문을 통과할 때 운동에너지를 해당 칸으로 전달된 열로 보고 ΔS=Σ(ΔQ/T)로 누적합니다.</div>
+        </div>
+
+        <div class="card" id="tempControls">
+          <div class="row" style="justify-content:space-between">
+            <div class="row">
+              <label>왼쪽 초기 온도 T<sub>L0</sub></label>
+              <input id="TL0Input" type="range" min="0.2" max="5.0" step="0.1" value="1.0" />
+              <span class="stat" id="TL0Label">1.0</span>
+            </div>
+            <div class="row">
+              <label>오른쪽 초기 온도 T<sub>R0</sub></label>
+              <input id="TR0Input" type="range" min="0.2" max="5.0" step="0.1" value="1.0" />
+              <span class="stat" id="TR0Label">1.0</span>
+            </div>
+          </div>
+          <div class="row" style="justify-content:flex-end">
+            <button id="applyTemps">온도 슬라이더 적용</button>
+          </div>
+          <div class="small">슬라이더를 바꾸고 "온도 슬라이더 적용"을 누르면 현재 각 칸의 속도 분포를 해당 목표 온도로 <b>재가열/냉각(스케일링)</b> 합니다. 리셋 시에도 슬라이더 값이 초기 조건으로 반영됩니다.</div>
         </div>
 
         <div class="card">
@@ -142,6 +163,10 @@
   const TLspan = document.getElementById('TL'); const TRspan = document.getElementById('TR');
   const SQspan = document.getElementById('SQ'); const QLspan = document.getElementById('QL'); const QRspan = document.getElementById('QR');
 
+  const TL0Input = document.getElementById('TL0Input'); const TR0Input = document.getElementById('TR0Input');
+  const TL0Label = document.getElementById('TL0Label'); const TR0Label = document.getElementById('TR0Label');
+  const applyTempsBtn = document.getElementById('applyTemps');
+
   const nInput = document.getElementById('nInput'); const vInput = document.getElementById('vInput');
   const gInput = document.getElementById('gInput'); const gwInput = document.getElementById('gwInput');
   const nLabel = document.getElementById('nLabel');
@@ -152,6 +177,9 @@
   vInput.oninput = (e)=>{ speedScale = +e.target.value; document.getElementById('vLabel').textContent = speedScale.toFixed(1); }
   gInput.oninput = (e)=>{ gatePct = +e.target.value; gatePercSpan.textContent = gatePct; }
   gwInput.oninput = (e)=>{ gateWidth = +e.target.value; gwLabel.textContent = gateWidth+"px"; }
+  TL0Input.oninput = ()=>{ TL0Label.textContent = (+TL0Input.value).toFixed(1); };
+  TR0Input.oninput = ()=>{ TR0Label.textContent = (+TR0Input.value).toFixed(1); };
+  applyTempsBtn.onclick = ()=>{ rethermalize('L', +TL0Input.value); rethermalize('R', +TR0Input.value); };
 
   let particles = [];
   let logFact = buildLogFact(20000);
@@ -166,6 +194,8 @@
     const lnWmaxBlue = lnChoose(NperColor, Math.floor(NperColor/2), logFact);
     maxLogW = lnWmaxRed + lnWmaxBlue;
     history = []; t = 0; QL = 0; QR = 0; SQ = 0;
+    rethermalize('L', +TL0Input.value);
+    rethermalize('R', +TR0Input.value);
   }
 
   function makeParticle(isRed){
@@ -174,6 +204,26 @@
     y = Math.random()*(H - 2*radius) + radius;
     let vx = randn(), vy = randn();
     return {x,y,vx,vy, red:isRed};
+  }
+
+  function rethermalize(side, Ttarget){
+    const leftSide = (side==='L');
+    let count=0, sumKE=0;
+    for(const p of particles){
+      const isLeft = p.x < midX;
+      if((leftSide && isLeft) || (!leftSide && !isLeft)){
+        count++; sumKE += 0.5*(p.vx*p.vx + p.vy*p.vy);
+      }
+    }
+    if(count===0) return;
+    let Tcurr = sumKE / count; if(!isFinite(Tcurr) || Tcurr<=0) Tcurr = 1e-6;
+    const s = Math.sqrt(Ttarget / Tcurr);
+    for(const p of particles){
+      const isLeft = p.x < midX;
+      if((leftSide && isLeft) || (!leftSide && !isLeft)){
+        p.vx *= s; p.vy *= s;
+      }
+    }
   }
 
   function entropyNow(){
@@ -223,10 +273,8 @@
         let lCount=0,rCount=0,sumL=0,sumR=0;
         for(const q of particles){ const left = (q.x < midX); const ke = 0.5*(q.vx*q.vx + q.vy*q.vy); if(left){ lCount++; sumL+=ke; } else { rCount++; sumR+=ke; } }
         const TL = lCount? (sumL/lCount) : 1e-6; const TR = rCount? (sumR/rCount) : 1e-6;
-        // keep ΔS from heat idea but without sliders
-        SQ = SQ + (-KE)/TL + (KE)/TR;
-        if(prevLeft && !nowLeft){ QL -= KE; QR += KE; }
-        else if(!prevLeft && nowLeft){ QR -= KE; QL += KE; }
+        if(prevLeft && !nowLeft){ QL -= KE; QR += KE; SQ += (-KE)/TL + (KE)/TR; }
+        else if(!prevLeft && nowLeft){ QR -= KE; QL += KE; SQ += (-KE)/TR + (KE)/TL; }
       }
     }
   }
@@ -234,12 +282,12 @@
   function draw(){
     ctx.clearRect(0,0,W,H); ctx.fillStyle = '#0b0e1a'; ctx.fillRect(0,0,W,H);
     const openHalf = (gatePct/100) * (H/2); const gateTop = H/2 - openHalf, gateBot = H/2 + openHalf;
-    ctx.fillStyle = '#263055'; ctx.fillRect(midX - 4, 0, 8, gateTop); ctx.fillRect(midX - 4, gateBot, 8, H-gateBot);
+    ctx.fillStyle = '#263055'; ctx.fillRect(midX - gateWidth/2, 0, gateWidth, gateTop); ctx.fillRect(midX - gateWidth/2, gateBot, gateWidth, H-gateBot);
     const grad = ctx.createLinearGradient(midX-8, 0, midX+8, 0); grad.addColorStop(0, 'rgba(120,168,255,0)'); grad.addColorStop(0.5, 'rgba(120,168,255,0.22)'); grad.addColorStop(1, 'rgba(120,168,255,0)'); ctx.fillStyle = grad; ctx.fillRect(midX-12, gateTop, 24, gateBot-gateTop);
     for(const p of particles){ ctx.beginPath(); ctx.arc(p.x, p.y, radius, 0, 2*Math.PI); ctx.fillStyle = p.red ? 'rgba(255,77,77,0.95)' : 'rgba(77,155,255,0.95)'; ctx.fill(); }
   }
 
-  let history = []; let t = 0; let last=performance.now();
+  let history = []; let t = 0;
   function drawChart(){
     const padding = 28; const w = chart.width, h = chart.height; cctx.clearRect(0,0,w,h);
     cctx.strokeStyle = '#32406f'; cctx.lineWidth = 1; cctx.beginPath(); cctx.moveTo(padding, h - padding); cctx.lineTo(w - padding, h - padding); cctx.moveTo(padding, h - padding); cctx.lineTo(padding, padding); cctx.stroke();
@@ -250,6 +298,7 @@
     cctx.lineWidth = 2; cctx.strokeStyle = '#51d19a'; cctx.beginPath(); cctx.moveTo(xFor(history[0][0]), yFor(history[0][1])); for(const [tt, ss] of history){ cctx.lineTo(xFor(tt), yFor(ss)); } cctx.stroke();
   }
 
+  let last= performance.now();
   function loop(now){
     const dt = Math.min(0.033, (now-last)/16); last = now; if(running){ step(dt); }
     const s = entropyNow(); if(history.length===0 || (t - history[history.length-1][0])>0.05){ history.push([t, s]); if(history.length>1200) history.shift(); }
