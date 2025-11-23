@@ -85,169 +85,142 @@
       </div>
 </section>
 
-    <!-- Intro -->
-    <section class="card page" id="page-intro">
-      <!-- 1. 엔트로피 -->
-      <div class="inner">
-        <h2>1. 엔트로피란?</h2>
-        <p>
-          엔트로피는 아주 거칠게 말하면<br>
-          <strong>“어떻게 배치될 수 있는 경우의 수”</strong> + <strong>“어느 쪽이 더 자연스러운지(잘 일어나는지)”</strong>를
-          나타내는 양이라고 볼 수 있습니다.
-        </p>
-        <p>
-          엔트로피가 클수록 입자들이 더 많은 방식으로 섞여 있을 수 있고,<br>
-          그 상태가 더 자연스럽고 잘 일어나는 상태라는 뜻입니다.
-        </p>
-        <p>
-          자연계에서는 <strong>엔트로피가 커지는 방향(엔트로피 증가 방향)</strong>으로 변화가 일어나려는 경향이 있습니다.<br>
-          → <strong>“자발적인 변화 = 엔트로피 증가 쪽”</strong>
-        </p>
-      </div>
+<section class="card page" id="page-intro">
+  <!-- 1. 엔트로피 -->
+  <div class="inner">
+    <h2>1. 엔트로피</h2>
+    <p>
+      쉽게 말하면 <strong>엔트로피 = “어떻게 배치될 수 있는 경우의 수” + “어느 쪽이 더 자연스러운지”</strong>를 나타내는 양입니다.
+    </p>
+    <p>
+      엔트로피가 클수록 입자들이 더 여러 가지 방식으로 섞여 있을 수 있고,<br>
+      그 상태가 자연스럽고 실제로 잘 일어나는 상태라는 뜻입니다.
+    </p>
+    <p>
+      자연계에서는 보통 <strong>엔트로피가 커지는 방향(엔트로피 증가 방향)</strong>으로 변화가 일어나려는 경향이 있습니다.<br>
+      → <strong>“자발적인 변화 = 엔트로피 증가 쪽”</strong>
+    </p>
+  </div>
 
-      <!-- 2. 열역학적 엔트로피 -->
-      <div class="inner">
-        <h2>2. 열역학적 엔트로피 (thermodynamical entropy)</h2>
-        <p>
-          열역학적 엔트로피는 <strong>거시적인 관점</strong>에서 정의된 엔트로피로,<br>
-          <strong>온도, 압력, 부피, 열량</strong> 같은 눈에 보이는 물리량으로 표현합니다.
-        </p>
-        <p>
-          어떤 물체에 열 <code>Q</code>를 아주 천천히(이상적인 가역 과정) 넣었을 때,<br>
-          그 물체의 온도가 <code>T</code>라면 엔트로피 변화는 대략
-          <code>ΔS ≈ Q / T</code> 로 나타낼 수 있습니다.
-        </p>
-        <ul>
-          <li>같은 열 <code>Q</code>라도 <strong>온도가 낮을 때</strong> 넣으면 엔트로피 변화가 더 큼</li>
-          <li><strong>온도가 높을 때</strong> 넣으면 같은 <code>Q</code>でも 엔트로피 변화가 작음</li>
-        </ul>
-        <p>
-          중요한 점만 정리하면:
-        </p>
-        <ul>
-          <li><strong>엔트로피는 상태함수</strong> → 처음 상태와 나중 상태만 알면 되고, 중간 경로는 상관 없음</li>
-          <li><strong>열이 (가역적으로) 들어가면</strong> 엔트로피 증가, <strong>열이 빠져나가면</strong> 엔트로피 감소</li>
-        </ul>
-        <p class="muted" style="font-size:13px">
-          ※ 복잡한 적분식 <code>ΔS = ∫(dQ<sub>rev</sub>/T)</code>나 카르노 사이클 유도 과정은 고1 수준에서는 생략해도 충분합니다.
-        </p>
-      </div>
+  <!-- 2. 열역학적 엔트로피 -->
+  <div class="inner">
+    <h2>2. 열역학적 엔트로피 (thermodynamical entropy)</h2>
+    <p>
+      열역학적 엔트로피는 <strong>거시적인 관점</strong>에서 정의한 엔트로피로,<br>
+      <strong>온도, 압력, 부피, 열량</strong> 같은 눈에 보이는 물리량으로 표현합니다.
+    </p>
+    <p>
+      어떤 물체에 열 <code>Q</code>를 아주 천천히(이상적인 가역 과정) 넣었을 때,<br>
+      그 물체의 온도가 <code>T</code>라면 엔트로피 변화량은 대략
+      <code>ΔS ≈ Q / T</code> 로 나타낼 수 있습니다.
+    </p>
+    <p>
+      즉, 같은 열 <code>Q</code>라도
+    </p>
+    <ul>
+      <li><strong>온도가 낮을 때</strong> 넣으면 엔트로피 변화가 더 크고,</li>
+      <li><strong>온도가 높을 때</strong> 넣으면 엔트로피 변화가 더 작습니다.</li>
+    </ul>
+    <p>
+      중요한 점만 정리하면:
+    </p>
+    <ul>
+      <li><strong>엔트로피는 상태함수</strong> → 처음 상태와 나중 상태만 알면 되고, 중간에 어떻게 갔는지는 상관 없음</li>
+      <li><strong>열이 (가역적으로) 들어가면</strong> 엔트로피 증가, <strong>열이 빠져나가면</strong> 엔트로피 감소</li>
+    </ul>
+  </div>
 
-      <!-- 3. 통계역학적 엔트로피 -->
-      <div class="inner">
-        <h2>3. 통계역학적 엔트로피 (statistical entropy)</h2>
-        <p>
-          통계역학적 엔트로피는 <strong>미시적인 관점</strong>, 즉<br>
-          “분자 하나하나가 어떻게 움직이고 어디에 있는지”를 생각하는 방식입니다.
-        </p>
+  <!-- 3. 통계역학적 엔트로피 -->
+  <div class="inner">
+    <h2>3. 통계역학적 엔트로피 (statistical entropy)</h2>
+    <p>
+      통계역학적 엔트로피는 <strong>미시적인 관점</strong>에서 보는 엔트로피입니다.<br>
+      즉, “분자 하나하나가 어디에 있고, 어떻게 움직이는지”를 생각하는 방식입니다.
+    </p>
 
-        <h3 style="margin-top:10px;">(1) 미시상태와 거시상태</h3>
-        <ul>
-          <li><strong>거시상태</strong>: 우리가 보는 큰 특징 (예: 기체 1L, 온도 300K, 압력 얼마)</li>
-          <li><strong>미시상태</strong>: 그 거시상태를 만들 수 있는 분자들의 구체적인 배치와 속도 정보</li>
-        </ul>
-        <p>
-          같은 거시상태라도 그것을 만들 수 있는 미시상태는 엄청나게 많을 수 있습니다.
-        </p>
+    <h3 style="margin-top:10px;">(1) 미시상태와 거시상태</h3>
+    <ul>
+      <li><strong>거시상태</strong>: 우리가 보는 큰 특징 (예: “기체 1L, 온도 300K, 압력 얼마”)</li>
+      <li><strong>미시상태</strong>: 그 거시상태를 만들 수 있는 분자들의 구체적인 배치와 속도 정보</li>
+    </ul>
+    <p>
+      같은 거시상태라도, 그것을 만들 수 있는 <strong>미시상태는 엄청나게 많을 수 있습니다.</strong>
+    </p>
 
-        <h3 style="margin-top:10px;">(2) 볼츠만의 엔트로피 식</h3>
-        <p>
-          통계역학에서 엔트로피는 보통 다음과 같이 씁니다:
-        </p>
-        <p><code>S = k log W</code></p>
-        <ul>
-          <li><code>W</code> : 가능한 미시상태의 수</li>
-          <li><code>k</code> : 볼츠만 상수 (여기서는 “비례상수” 정도로 생각해도 됨)</li>
-        </ul>
-        <p>
-          즉, <strong>가능한 미시상태 수 <code>W</code>가 클수록 엔트로피 <code>S</code>가 크다</strong>는 뜻입니다.
-        </p>
+    <h3 style="margin-top:10px;">(2) 볼츠만의 엔트로피 식</h3>
+    <p>통계역학에서 엔트로피는 보통 다음과 같이 씁니다:</p>
+    <p><code>S = k log W</code></p>
+    <ul>
+      <li><code>W</code> : 가능한 미시상태의 수</li>
+      <li><code>k</code> : 볼츠만 상수 (비례상수 정도로 생각해도 무방)</li>
+    </ul>
+    <p>
+      즉, <strong>가능한 미시상태 수 <code>W</code>가 클수록 엔트로피 <code>S</code>가 크다</strong>는 뜻입니다.
+    </p>
 
-        <h3 style="margin-top:10px;">(3) 변화량 관점</h3>
-        <p>
-          어떤 과정에서
-        </p>
-        <ul>
-          <li>처음 미시상태 수: <code>W<sub>initial</sub></code></li>
-          <li>나중 미시상태 수: <code>W<sub>final</sub></code></li>
-        </ul>
-        <p>
-          이때 엔트로피 변화는
-        </p>
-        <p><code>ΔS = k log( W<sub>final</sub> / W<sub>initial</sub> )</code></p>
-        <p>
-          보통 자발적인 변화에서는 <code>W<sub>final</sub> &gt; W<sub>initial</sub></code> 이므로<br>
-          <code>ΔS &gt; 0</code>, 즉 엔트로피가 증가합니다.
-        </p>
-        <p>
-          수식을 정확히 계산하는 것보다<br>
-          <strong>“더 많은 미시상태가 가능한 방향으로 자연스럽게 진행된다 = 엔트로피 증가 방향이다”</strong><br>
-          이 느낌을 잡는 게 더 중요합니다.
-        </p>
-      </div>
+    <h3 style="margin-top:10px;">(3) 변화량 관점</h3>
+    <p>어떤 과정에서</p>
+    <ul>
+      <li>처음 미시상태 수: <code>W<sub>initial</sub></code></li>
+      <li>나중 미시상태 수: <code>W<sub>final</sub></code></li>
+    </ul>
+    <p>이때 엔트로피 변화는</p>
+    <p><code>ΔS = k log( W<sub>final</sub> / W<sub>initial</sub> )</code></p>
+    <p>
+      보통 자발적인 변화에서는 <code>W<sub>final</sub> &gt; W<sub>initial</sub></code> 이기 때문에<br>
+      <code>ΔS &gt; 0</code>, 즉 엔트로피가 증가합니다.
+    </p>
+    <p>
+      수식을 정확히 계산하는 것보다<br>
+      <strong>“더 많은 미시상태가 가능한 방향으로 자연스럽게 진행된다 = 엔트로피 증가 방향이다”</strong><br>
+      이 느낌을 잡는 것이 더 중요합니다.
+    </p>
+  </div>
 
-      <!-- 4. 통계역학이란? -->
-      <div class="inner">
-        <h2>4. 통계역학이란?</h2>
-        <p>
-          통계역학은
-          <strong>분자·입자 하나하나(미시적인 세계)의 행동</strong>을<br>
-          <strong>온도, 압력, 엔트로피 같은 거시적인 물리량</strong>과 연결해 주는 학문입니다.
-        </p>
-        <p>
-          열역학이 “법칙을 그냥 받아들이고 쓰는 쪽”이라면,<br>
-          통계역학은 “왜 그런 법칙이 나오는지, 입자 입자 입장에서 설명하는 쪽”에 가깝습니다.
-        </p>
-      </div>
+  <!-- 통계역학 설명 -->
+  <div class="inner">
+    <h2>※ 통계역학이란?</h2>
+    <p>
+      통계역학은 <strong>분자·입자 하나하나(미시적인 세계)의 행동</strong>을<br>
+      <strong>온도, 압력, 엔트로피 같은 거시적인 물리량</strong>과 연결해 주는 학문입니다.
+    </p>
+    <p>
+      열역학이 “법칙을 그냥 받아들이고 쓰는 쪽”이라면,<br>
+      통계역학은 “왜 그런 법칙이 나오는지, 입자 입자 입장에서 설명하는” 느낌에 가깝습니다.
+    </p>
+  </div>
 
-      <!-- 5. 엔트로피가 증가하는 예시들 -->
-      <div class="inner">
-        <h2>5. 엔트로피가 증가하는 예시들</h2>
-        <p>통계역학적으로 보면, 아래 현상들은 모두 미시상태 수가 증가해서 엔트로피가 커지는 과정입니다.</p>
-        <ul>
-          <li>
-            <strong>가열 (온도 상승)</strong><br>
-            입자들이 더 빨리 움직일 수 있는 경우의 수가 늘어남 → <code>W</code> 증가 → <code>S</code> 증가
-          </li>
-          <li>
-            <strong>확산</strong><br>
-            예) 향수 냄새가 방 전체로 퍼지는 것<br>
-            처음엔 한쪽에만 있다가, 나중엔 방 전체에 흩어져 배치 경우의 수가 훨씬 많아짐.
-          </li>
-          <li>
-            <strong>입자의 진동·운동 증가</strong><br>
-            고체를 가열하면 원자들이 더 세게 진동 → 운동에너지 분배 방식이 다양해짐 → 엔트로피 증가
-          </li>
-          <li>
-            <strong>용액의 혼합</strong><br>
-            예) 소금을 물에 녹이기, 두 종류의 기체 섞기 등<br>
-            섞인 상태가 분자 배치 가능한 경우의 수가 훨씬 많음 → 엔트로피 증가
-          </li>
-        </ul>
-        <p class="muted" style="font-size:13px">
-          (혼합에 따라 끓는점 오름, 어는점 내림, 삼투압 같은 효과도 함께 나타납니다.)
-        </p>
-      </div>
+  <!-- 4. 엔트로피가 증가하는 예시들 -->
+  <div class="inner">
+    <h2>4. 엔트로피가 증가하는 예시들</h2>
+    <p>
+      통계역학적으로 보면, 아래 현상들은 모두 <strong>미시상태 수가 증가해서 엔트로피가 커지는 과정</strong>입니다.
+    </p>
+    <ul>
+      <li>
+        <strong>가열 (온도 상승)</strong><br>
+        입자들이 더 빨리, 더 다양하게 움직일 수 있는 경우의 수가 늘어남 → <code>W</code> 증가 → <code>S</code> 증가
+      </li>
+      <li>
+        <strong>확산</strong><br>
+        예) 향수 냄새가 방 전체로 퍼지는 것<br>
+        처음에는 입자들이 한쪽에만 모여 있다가, 나중에는 방 전체에 흩어져
+        배치 경우의 수가 훨씬 많아집니다.
+      </li>
+      <li>
+        <strong>입자의 진동·운동 증가</strong><br>
+        고체를 가열하면 원자들이 더 세게 진동 → 운동에너지 분배 방식이 다양해짐 → 엔트로피 증가
+      </li>
+      <li>
+        <strong>용액의 혼합</strong><br>
+        예) 소금을 물에 녹이기, 두 종류의 기체 섞이기 등<br>
+        서로 섞인 상태가 분자 배치 가능한 경우의 수가 훨씬 많음 → 엔트로피 증가<br>
+        (이 과정에서 끓는점 오름, 어는점 내림, 삼투압 등의 현상도 함께 나타날 수 있습니다.)
+      </li>
+    </ul>
+  </div>
+</section>
 
-      <!-- 6. 한 줄 요약 -->
-      <div class="inner">
-        <h2>6. 전체 요약</h2>
-        <ul>
-          <li>
-            <strong>열역학적 엔트로피</strong>:<br>
-            “열과 온도로 측정되는 상태를 나타내는 양” — <code>ΔS ≈ Q / T</code>
-          </li>
-          <li>
-            <strong>통계역학적 엔트로피</strong>:<br>
-            “그 상태를 만들 수 있는 미시적인 배치(경우의 수)가 얼마나 많은지 나타내는 양” — <code>S = k log W</code>
-          </li>
-          <li>
-            <strong>자연계의 자발적인 변화</strong>는<br>
-            가능한 경우의 수가 더 많아지는 방향, 즉 <strong>엔트로피가 증가하는 방향</strong>으로 일어난다.
-          </li>
-        </ul>
-      </div>
-    </section>
 
 
     <!-- Simulator Gallery -->
