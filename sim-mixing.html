@@ -162,7 +162,9 @@
   const rL = document.getElementById('rLeft'); const rR = document.getElementById('rRight');
   const bL = document.getElementById('bLeft'); const bR = document.getElementById('bRight');
   const Sspan = document.getElementById('Snow'); const meter = document.getElementById('meter');
-  const gatePercSpan = document.getElementById('gatePerc'); const gwLabel = document.getElementById('gwLabel');
+  const gatePercSpan = document.getElementById('gatePerc');
+  const gwLabel = document.getElementById('gwLabel');
+  const gateLabel = document.getElementById('gateLabel');
 
   const TLspan = document.getElementById('TL'); const TRspan = document.getElementById('TR');
   const SQspan = document.getElementById('SQ'); const QLspan = document.getElementById('QL'); const QRspan = document.getElementById('QR');
@@ -179,7 +181,11 @@
   document.getElementById('reset').onclick = resetAll;
   nInput.oninput = (e)=>{ NperColor = +e.target.value; nLabel.textContent = NperColor; resetAll(); }
   vInput.oninput = (e)=>{ speedScale = +e.target.value; document.getElementById('vLabel').textContent = speedScale.toFixed(1); }
-  gInput.oninput = (e)=>{ gatePct = +e.target.value; gatePercSpan.textContent = gatePct; }
+  gInput.oninput = (e)=>{
+    gatePct = +e.target.value;
+    gatePercSpan.textContent = gatePct;
+    gateLabel.textContent = gatePct + "%";
+  };
   gwInput.oninput = (e)=>{ gateWidth = +e.target.value; gwLabel.textContent = gateWidth+"px"; }
   TL0Input.oninput = ()=>{ TL0Label.textContent = (+TL0Input.value).toFixed(1); };
   TR0Input.oninput = ()=>{ TR0Label.textContent = (+TR0Input.value).toFixed(1); };
